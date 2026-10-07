@@ -1,5 +1,7 @@
 package view;
 
+import graphics.RasterImage;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -17,32 +19,24 @@ import javax.swing.JPanel;
  */
 public class Canvas extends JPanel {
 
-    private final BufferedImage image;
+    private final RasterImage image;
 
-    private static final int STROKE_COLOR = Color.WHITE.getRGB();
     private static final Color BACKGROUND_COLOR = new Color(0x2F2F2F);
 
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Constructors -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
     public Canvas(int width, int height) {
         setPreferredSize(new Dimension(width, height));
-        image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        image = new RasterImage(width,height);
+        clear();
     }
 
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Rendering -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-    public void draw() {
-        clear();
-        image.setRGB(10, 10, STROKE_COLOR);
-    }
+
 
     public void clear() {
-        Graphics graphics = image.getGraphics();
-
-        graphics.setColor(BACKGROUND_COLOR);
-        graphics.fillRect(0, 0, image.getWidth(), image.getHeight());
-
-        graphics.dispose();
+       image.clear(BACKGROUND_COLOR.getRGB());
     }
 
     /**
@@ -54,12 +48,12 @@ public class Canvas extends JPanel {
     @Override
     protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
-        graphics.drawImage(image, 0, 0, null);
+        image.present(graphics);
     }
 
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= Getters -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
-    public BufferedImage getRaster() {
+    public RasterImage getRaster() {
         return image;
     }
 
