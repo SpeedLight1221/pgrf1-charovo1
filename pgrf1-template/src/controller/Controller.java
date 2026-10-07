@@ -35,6 +35,8 @@ public class Controller {
     private final Canvas canvas;
     private final LineRasterizer raster;
 
+    boolean lin = true;
+
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Constructors -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
     public Controller(Canvas canvas) {
@@ -54,8 +56,15 @@ public class Controller {
            @Override
            public void mousePressed(MouseEvent e) {
                super.mousePressed(e);
+
+               if(lin){
                startPoint = getPoint(e);
                currentPoint = startPoint;
+               }
+               else
+               {
+                   System.out.println(e.getX() + " " + e.getY());
+               }
 
 
            }
@@ -63,10 +72,12 @@ public class Controller {
            @Override
            public void mouseReleased(MouseEvent e) {
                super.mouseReleased(e);
+               if(lin){
                lineList.add(new Line(startPoint,getPoint(e),LINE_COLOR));
                startPoint = null ;
                currentPoint  = null;
                render();
+               }
            }
        });
 
@@ -74,6 +85,14 @@ public class Controller {
            @Override
            public void keyPressed(KeyEvent e) {
                super.keyPressed(e);
+               lin = !lin;
+               System.out.println(lin);
+
+               if(e.getKeyCode() == KeyEvent.VK_E){
+                   lineList.add(new Line(new Point(200,20),new Point(200,300),LINE_COLOR));
+                   lineList.add(new Line(new Point(20,200),new Point(200,200),LINE_COLOR));
+                   render();
+               }
 
 
            }

@@ -23,13 +23,51 @@ public class TrivialLineRasterizer implements LineRasterizer {
     }
 
     public void rasterize(int x1,int y1,int x2, int y2,int rgb){
-        float k = (y2-y1)/(float)(x1-x2);
-        float q = y1-k * x1;
 
-        for(int x = x1; x<= x2; x++)
+
+        int dx =(x2-x1);
+        int dy =(y2-y1);
+
+        System.out.println("x " +dx);
+        System.out.println("y " + dy);
+
+        float k = dy/(float)dx;
+        float q = y1-(k * x1);
+
+        int itStart = x1;
+        int itEnd = x2;
+        if(Math.abs(dy) > Math.abs(dx))
         {
-            float y = k * x + q;
-            raster.setPixel(x,Math.round(y),rgb);
+            itStart = y1;
+            itEnd = y2;
+        }
+
+        if(itStart > itEnd){
+            int t = itStart;
+            itStart = itEnd;
+            itEnd = t;
+        }
+
+
+
+
+
+        for(int i = itStart; i<= itEnd; i++)
+        {
+
+            if(Math.abs(dy) > Math.abs(dx))
+            {
+                float x = (i-q)/k;
+                if(dx == 0){
+                    x = x1;
+                }
+                raster.setPixel(Math.round(x),i,rgb);
+            }
+            else
+            {
+                float y = k * i + q;
+                raster.setPixel(i,Math.round(y),rgb);
+            }
         }
     }
 }
