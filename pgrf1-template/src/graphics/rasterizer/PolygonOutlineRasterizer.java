@@ -19,7 +19,7 @@ public class PolygonOutlineRasterizer implements PolygonRasterizer {
 
         List<Line> ls = polygon.GetLines();
 
-        if(ls.size() > 1)
+        if(ls.size() == 2)
         {
             Line l1 = ls.getFirst();
             Line l2 =ls.getLast();

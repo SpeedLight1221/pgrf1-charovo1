@@ -22,4 +22,11 @@ public class Line {
     public int getColor() {
         return Color;
     }
+
+    public Point getMid(){
+        int mX = (p1.getX()+p2.getX())/2;
+        int mY = (p1.getY()+p2.getY())/2;
+
+        return  new Point(mX,mY);
+    }
 }

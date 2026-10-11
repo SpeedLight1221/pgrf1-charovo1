@@ -16,4 +16,12 @@ public class Point {
         this.x = x;
         this.y = y;
     }
+
+    public double pointDistance(Point p){
+
+        int dX = (int)Math.pow(x-p.getX(),2);
+        int dY = (int)Math.pow(y-p.getY(),2);
+
+        return Math.sqrt(dX+dY);
+    }
 }

@@ -7,12 +7,10 @@ import graphics.rasterizer.TrivialLineRasterizer;
 import model.Line;
 import model.Point;
 import model.Polygon;
+import model.Tuple;
 import view.Canvas;
 
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.util.ArrayList;
 
 
@@ -32,14 +30,14 @@ public class Controller {
     ArrayList<Line> lineList = new ArrayList<Line>();
 
     private static final int LINE_COLOR = 0x00FF00;
-    private static final int PREVIEW_COLOR = 0x00AA00;
+    private static final int PREVIEW_COLOR = 0xFF0000;
 
 
     private final Canvas canvas;
-    private final LineRasterizer rasterizer;
+    private final LineRasterizer lineRasterizer;
     private final PolygonRasterizer polygonRasterizer;
 
-    private final Polygon poly;
+    private Polygon poly;
 
 
 
@@ -48,14 +46,11 @@ public class Controller {
     public Controller(Canvas canvas) {
 
         this.canvas = canvas;
-        rasterizer = new TrivialLineRasterizer(canvas.getRaster());
-        polygonRasterizer = new PolygonOutlineRasterizer(rasterizer);
+        lineRasterizer = new TrivialLineRasterizer(canvas.getRaster());
+        polygonRasterizer = new PolygonOutlineRasterizer(lineRasterizer);
         poly = new Polygon();// todo pridavani do polygonu
 
-        lineList.add(new Line(new Point(10,10),new Point(100,100),LINE_COLOR));
-        lineList.add(new Line(new Point(100,100),new Point(200,50),LINE_COLOR));
-        lineList.add(new Line(new Point(200,50),new Point(300,300),LINE_COLOR));
-        lineList.add(new Line(new Point(300,300),new Point(50,250),LINE_COLOR));
+
 
     }
 
@@ -63,17 +58,26 @@ public class Controller {
 
     public void init() {
         canvas.clear();
-        polygonRasterizer.rasterize(new Polygon(lineList));
+
 
        canvas.addMouseListener(new MouseAdapter() {
            @Override
            public void mousePressed(MouseEvent e) {
                super.mousePressed(e);
 
-               //TODO : vzít aktuální pozici, při stisknutí LMB přidat nový bod do polygonu
 
-               startPoint = getPoint(e);
+                if(!lineList.isEmpty()){
+                    startPoint = lineList.getLast().getP2();
+                }
+                else
+                {
+                    startPoint = getPoint(e);
+                }
+
+
                currentPoint = startPoint;
+
+               previewRender();
 
 
 
@@ -84,33 +88,50 @@ public class Controller {
            @Override
            public void mouseReleased(MouseEvent e) {
                super.mouseReleased(e);
+
                //TODO : při puštění zmizí preview čára,
 
-               lineList.add(new Line(startPoint,getPoint(e),LINE_COLOR));
+
+
+               if(lineList.size() > 2){
+                   Line closest = getClosestLine(getPoint(e));
+                   lineList.add(new Line(closest.getP1(),currentPoint,LINE_COLOR));
+                   lineList.add(new Line(currentPoint,closest.getP2(),LINE_COLOR));
+                   lineList.remove(closest);
+               }
+               else
+               {
+                   lineList.add(new Line(startPoint,getPoint(e),LINE_COLOR));
+               }
+
+
                startPoint = null ;
                currentPoint  = null;
+
+               canvas.clear();
                render();
 
            }
 
+
+
+
            //TODO : Drag mouse, aktualizovat preview
        });
 
-       canvas.addKeyListener(new KeyAdapter() {
+       canvas.addMouseMotionListener(new MouseMotionAdapter() {
            @Override
-           public void keyPressed(KeyEvent e) {
-               super.keyPressed(e);
+           public void mouseDragged(MouseEvent e) {
 
-               if(e.getKeyCode() == KeyEvent.VK_U){
+               System.out.println("Drag");
+               super.mouseDragged(e);
 
-               }
-
-
-
+               currentPoint = getPoint(e);
+               previewRender();
            }
-
-
        });
+
+
 
         canvas.repaint();
     }
@@ -135,17 +156,85 @@ public class Controller {
 
     //todo final, kreslime polygon, v moment co mame 2 cary se dokonci, dalsi kliknuti pak prida novy bod do polygonu
 
-    private void render(){
+    private void previewRender(){
+
         canvas.clear();
-        if(lineList.size() > 1)
+        if(lineList.size() < 1){
+            Line prwLine = new Line(startPoint,currentPoint,PREVIEW_COLOR);
+            lineRasterizer.rasterize(prwLine);
+
+        }
+        else if(lineList.size() ==1)
         {
-            polygonRasterizer.rasterize(new Polygon(lineList));
+            Line prwL1 = new Line(lineList.get(0).getP1(), currentPoint, PREVIEW_COLOR);
+            Line prwL2 = new Line(lineList.get(0).getP2(), currentPoint, PREVIEW_COLOR);
+            lineRasterizer.rasterize(prwL1);
+            lineRasterizer.rasterize(prwL2);
         }
-        else{
-            for(Line e : lineList){
-                rasterizer.rasterize(e);
+        else
+        {
+            Line closest = getClosestLine(currentPoint);
+            Line prwL1 = new Line(closest.getP1(), currentPoint, PREVIEW_COLOR);
+            Line prwL2 = new Line(closest.getP2(), currentPoint, PREVIEW_COLOR);
+            lineRasterizer.rasterize(prwL1);
+            lineRasterizer.rasterize(prwL2);
+        }
+        renderMids();
+        render();
+    }
+
+    private Line getClosestLine(Point curr){
+
+        Line closest = null;
+        double dist = -1;
+
+
+        for(Line l : poly.GetLines())
+        {
+            double cdist = l.getMid().pointDistance(curr);
+            if(dist > cdist || dist == -1)
+            {
+                closest = l;
+                dist= cdist;
             }
+
         }
+
+        return closest;
+    }
+
+    private void renderMids(){
+        for(Line l:lineList){
+
+
+            Point mid = l.getMid();
+            for(int i = -2; i < 3; i++){
+                for(int j = -2; j < 3; j++){
+
+                    int xmx =mid.getX()+i;
+                    int ymy = mid.getY()+j;
+
+
+                    canvas.getRaster().setPixel(xmx, ymy,0x0000FF );
+                }
+            }
+
+
+        }
+    }
+
+
+
+    private void render(){
+
+
+
+        poly = new Polygon(lineList);
+        polygonRasterizer.rasterize(poly);
+
+
+
+
         canvas.repaint();
     }
 }

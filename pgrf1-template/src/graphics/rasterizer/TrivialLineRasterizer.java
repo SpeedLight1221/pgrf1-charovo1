@@ -28,8 +28,7 @@ public class TrivialLineRasterizer implements LineRasterizer {
         int dx =(x2-x1);
         int dy =(y2-y1);
 
-        System.out.println("x " +dx);
-        System.out.println("y " + dy);
+
 
         float k = dy/(float)dx;
         float q = y1-(k * x1);

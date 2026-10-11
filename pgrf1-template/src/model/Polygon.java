@@ -5,7 +5,7 @@ import java.util.List;
 
 public class Polygon {
 
-    private  final List<Line> Lines;
+    private final List<Line> Lines;
 
     public Polygon(List<Line> lines){
         Lines = lines;
@@ -17,6 +17,10 @@ public class Polygon {
 
     public List<Line> GetLines(){
         return Lines;
+    }
+
+    public void AddLine(Line l){
+        Lines.add(l);
     }
 
 }
