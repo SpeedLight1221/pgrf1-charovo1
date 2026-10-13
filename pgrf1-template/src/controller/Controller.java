@@ -15,8 +15,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 
@@ -41,7 +39,7 @@ public class Controller {
     private Point editSelected;
     ArrayList<Line> lineList = new ArrayList<Line>();
 
-    private static final int LINE_COLOR = 0x00FF00;
+    private int lineColor = 0x00FF00;
     private static final int PREVIEW_COLOR = 0xFF0000;
 
 
@@ -81,6 +79,8 @@ public class Controller {
     public void init() {
         canvas.clear();
 
+        sidebar.lineColorRect.setBackground(new Color(lineColor));
+
         //region Keyevents
 
         InputMap IM = window.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -109,6 +109,9 @@ public class Controller {
                }
                else if(currentMode == Mode.EDIT){
                    editMousePress(e);
+               }
+               else if(currentMode == Mode.DELETE){
+                   deleteMousePress(e);
                }
 
            }
@@ -153,6 +156,7 @@ public class Controller {
             @Override
             public void actionPerformed(ActionEvent e) {
                 currentMode = Mode.DRAW;
+                renderMain(false,false);
             }
         });
 
@@ -160,6 +164,41 @@ public class Controller {
             @Override
             public void actionPerformed(ActionEvent e) {
                 currentMode = Mode.EDIT;
+                renderMain(false,true);
+
+            }
+        });
+
+        sidebar.deleteRadioBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                currentMode = Mode.DELETE;
+                renderMain(false,true);
+
+            }
+        });
+
+        sidebar.colorPickBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Color selected = JColorChooser.showDialog(sidebar, "Pick Color", new Color(lineColor));
+                if(selected != null){
+                    sidebar.lineColorRect.setBackground(selected);
+                    lineColor = selected.getRGB();
+                }
+
+
+
+            }
+        });
+
+        sidebar.applyToAllBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                for(Line l : lineList){
+                    l.setColor(lineColor);
+                }
+                renderMain();
             }
         });
 
@@ -199,18 +238,29 @@ public class Controller {
 
         if(currentMode == Mode.DRAW){
             currentMode = Mode.EDIT;
+            renderMain(false,true);
+
             sidebar.editRadioBtn.setSelected(true);
+
         }
         else if(currentMode == Mode.EDIT){
+            currentMode = Mode.DELETE;
+            renderMain(false,true);
+            sidebar.deleteRadioBtn.setSelected(true);
+
+        }
+        else if(currentMode == Mode.DELETE){
             currentMode = Mode.DRAW;
+            renderMain(false,false);
             sidebar.drawRadioBtn.setSelected(true);
+
         }
     }
 
     private void clearCanvas(){
         lineList.clear();
         canvas.clear();
-        render();
+        canvas.repaint();
     }
     //endregion
 
@@ -226,33 +276,34 @@ public class Controller {
 
         currentPoint = startPoint;
 
-        previewRender();
+        renderMain(true,false);
+        drawModePreview();
     }
 
     private void drawMouseRelease(MouseEvent e){
         if(lineList.size() > 2){
             Line closest = getClosestLine(getPoint(e));
-            lineList.add(new Line(closest.getP1(),currentPoint,LINE_COLOR));
-            lineList.add(new Line(currentPoint,closest.getP2(),LINE_COLOR));
+            lineList.add(new Line(closest.getP1(),currentPoint, lineColor));
+            lineList.add(new Line(currentPoint,closest.getP2(), lineColor));
             lineList.remove(closest);
         }
         else
         {
-            lineList.add(new Line(startPoint,getPoint(e),LINE_COLOR));
+            lineList.add(new Line(startPoint,getPoint(e), lineColor));
         }
 
 
         startPoint = null ;
         currentPoint  = null;
 
-        canvas.clear();
-        render();
+        renderMain(false,false);
     }
 
     private void drawMouseDrag(MouseEvent e){
 
         currentPoint = getPoint(e);
-        previewRender();
+        renderMain(true,false);
+        drawModePreview();
     }
 
     //endregion
@@ -260,23 +311,109 @@ public class Controller {
     //region editModeFunctions
 
     private void editMousePress(MouseEvent e){
-        editSelected = getClosestInRange(getPoint(e),5);
+
+        if(lineList.isEmpty())
+            return;
+
+        editSelected = getClosestPointInRange(getPoint(e),5);
+
+        if(editSelected == null) return;
+
+        renderMain(false,true);
+        editModePreview();
+
+
+
     }
 
-    private void editMouseRelease(MouseEvent e){
+    private void editMouseRelease(MouseEvent e) {
         editSelected = null;
+        renderMain(false,true);
+
     }
 
     private void editMouseDrag(MouseEvent e){
-        if(editSelected != null){
-            editSelected.setX(e.getX());
-            editSelected.setY(e.getY());
-        }
-        //todo Currently just draws ad infinitum. add edit preview and correct drawing
+
+        if(lineList.isEmpty())
+            return;
+        if(editSelected == null) return;
+        editSelected.setX(e.getX());
+        editSelected.setY(e.getY());
+
+        renderMain(false,true);
+        editModePreview();
     }
     //endregion
 
+    //region deleteModeFunctions
+
+        private void deleteMousePress(MouseEvent e)
+        {
+            for(Line l : lineList){
+                System.out.println(l.getP1().printC() + " to " + l.getP2().printC());
+            }
+            if(lineList.isEmpty())
+                return;
+
+
+
+            Point toDel = getClosestPointInRange(getPoint(e),5);
+
+            System.out.println(toDel + " todel");
+            if(toDel == null) return;
+
+
+            List<Line> toMerge = getLinesByCommonPoint(toDel);
+            System.out.println(toMerge.size() + " tmSize");
+
+            if(toMerge.size() == 1){
+                lineList.remove(toMerge.getFirst());
+            }
+            else if(toMerge.size() == 2){
+                List<Point> edgs = getEdgePoints(toMerge,toDel);
+
+                if(lineList.size()!=3){
+                    lineList.add(new Line(edgs.getFirst(), edgs.getLast(), lineColor));
+                }
+
+                lineList.remove(toMerge.getFirst());
+                lineList.remove(toMerge.getLast());
+            }
+
+            renderMain(false,true);
+
+
+        }
+    //endregion
+
     //region utils
+
+    private List<Line> getLinesByCommonPoint(Point com){
+
+        return lineList.stream().filter(x -> x.getP1() == com || x.getP2() == com).toList();
+    }
+
+    private List<Point> getEdgePoints(List<Line> lins, Point mid){
+        if(lins.size() != 2){
+            return  null;
+        }
+
+        List<Point> p = new ArrayList<>();
+
+
+        for(Line l : lins){
+
+            if(l.getP1() == mid){
+                p.add(l.getP2());
+            }
+            else if(l.getP2() == mid){
+                p.add(l.getP1());
+            }
+        }
+
+        return p;
+
+    }
 
 
 
@@ -304,7 +441,7 @@ public class Controller {
         return closest;
     }
 
-    private Point getClosestInRange(Point at, int range){
+    private Point getClosestPointInRange(Point at, int range){
 
         double dist = -1;
         Point closest = null;
@@ -335,31 +472,91 @@ public class Controller {
     //endregion
 
     //region render
-    private void previewRender(){
 
-        canvas.clear();
-        if(lineList.size() < 1){
-            Line prwLine = new Line(startPoint,currentPoint,PREVIEW_COLOR);
-            lineRasterizer.rasterize(prwLine);
-
-        }
-        else if(lineList.size() ==1)
-        {
-            Line prwL1 = new Line(lineList.get(0).getP1(), currentPoint, PREVIEW_COLOR);
-            Line prwL2 = new Line(lineList.get(0).getP2(), currentPoint, PREVIEW_COLOR);
-            lineRasterizer.rasterize(prwL1);
-            lineRasterizer.rasterize(prwL2);
+    private void renderMain(){
+        if(currentMode == Mode.EDIT || currentMode == Mode.DELETE){
+            renderMain(false,true);
         }
         else
         {
-            Line closest = getClosestLine(currentPoint);
-            Line prwL1 = new Line(closest.getP1(), currentPoint, PREVIEW_COLOR);
-            Line prwL2 = new Line(closest.getP2(), currentPoint, PREVIEW_COLOR);
-            lineRasterizer.rasterize(prwL1);
-            lineRasterizer.rasterize(prwL2);
+            renderMain(false,false);
         }
-        renderMids();
-        render();
+    }
+
+    private void renderMain(boolean mids, boolean points){
+        canvas.clear();
+
+        if(mids) renderMids();
+        if(points) renderPoints();
+
+        renderPolygon();
+
+        canvas.repaint();
+
+
+    }
+
+    private void editModePreview(){
+        List<Point> p = new ArrayList<>();
+        List<Line> cl =  getLinesByCommonPoint(editSelected);
+
+        for(Line l : cl){
+
+            if(l.getP1() == editSelected){
+                p.add(l.getP2());
+            }
+            else if(l.getP2() == editSelected){
+                p.add(l.getP1());
+            }
+        }
+
+
+        if(p.size() == 1){
+            previewRender(p.getFirst(),editSelected);
+        }
+        else {
+            previewRender(p.getFirst(),p.getLast(),editSelected);
+        }
+    }
+
+    private void drawModePreview(){
+
+
+        if(lineList.size() == 0){
+            previewRender(startPoint,currentPoint);
+
+        }
+        else if (lineList.size() == 1){
+            Line l = lineList.get(0);
+            previewRender(l.getP1(),l.getP2(),currentPoint);
+        }
+        else
+        {
+            Line l = getClosestLine(currentPoint);
+            previewRender(l.getP1(),l.getP2(),currentPoint);
+        }
+
+    }
+
+    private void previewRender(Point p1, Point p2){
+
+
+
+        Line prwLine = new Line(p1,p2,PREVIEW_COLOR);
+        lineRasterizer.rasterize(prwLine);
+        canvas.repaint();
+
+
+
+    }
+
+    private void previewRender(Point p1, Point p2, Point midP){
+        Line prwL1 = new Line(p1, midP, PREVIEW_COLOR);
+        Line prwL2 = new Line(p2, midP, PREVIEW_COLOR);
+        lineRasterizer.rasterize(prwL1);
+        lineRasterizer.rasterize(prwL2);
+        canvas.repaint();
+
     }
 
 
@@ -384,19 +581,39 @@ public class Controller {
         }
     }
 
+    private void renderPoints(){
+        for(Line l:lineList){
 
 
-    private void render(){
+            Point mid = l.getMid();
+            for(int i = -2; i < 3; i++){
+                for(int j = -2; j < 3; j++){
+
+                    int x1 =l.getP1().getX()+i;
+                    int y1 = l.getP1().getY()+j;
+
+                    canvas.getRaster().setPixel(x1, y1,0x0000FF );
 
 
+                    int x2 =l.getP2().getX()+i;
+                    int y2 = l.getP2().getY()+j;
+
+                    canvas.getRaster().setPixel(x2, y2,0x0000FF );
+
+                }
+            }
+
+
+        }
+    }
+
+
+
+    private void renderPolygon(){
 
         poly = new Polygon(lineList);
         polygonRasterizer.rasterize(poly);
 
-
-
-
-        canvas.repaint();
     }
 
     //endregion

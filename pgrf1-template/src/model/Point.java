@@ -35,4 +35,10 @@ public class Point {
         return Math.sqrt(dX+dY);
     }
 
+    public String printC(){
+        return getX() + " | " +getY();
+    }
+
+
+
 }
