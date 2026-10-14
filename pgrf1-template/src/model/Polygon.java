@@ -5,22 +5,20 @@ import java.util.List;
 
 public class Polygon {
 
-    private final List<Line> Lines;
+    public List<Line> Lines;
+
+    public int polygonId;
 
     public Polygon(List<Line> lines){
         Lines = lines;
     }
 
     public Polygon(){
-        this(List.of());
+        this(new ArrayList<Line>());
     }
 
     public List<Line> GetLines(){
         return Lines;
-    }
-
-    public void AddLine(Line l){
-        Lines.add(l);
     }
 
 }

@@ -1,13 +1,7 @@
 package view;
 
-import controller.Controller;
-
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 
 public class Sidebar extends JPanel {
 
@@ -26,6 +20,9 @@ public class Sidebar extends JPanel {
     public JButton colorPickBtn;
     public JPanel lineColorRect;
     public JButton applyToAllBtn;
+    public JComboBox<String> polygonPicker;
+    public JButton addPolygonBtn;
+    public JButton removePolygonBtn;
 
     public void populateSidebar(){
         GridBagConstraints gbc = new GridBagConstraints();
@@ -77,8 +74,8 @@ public class Sidebar extends JPanel {
         gbc.gridx =0;
         gbc.gridwidth =4;
         gbc.ipady = 0;
+        gbc.insets = new Insets(0,5,0,5);
         gbc.anchor = GridBagConstraints.PAGE_START;
-        gbc.insets = new Insets(0,0,0,0);
         add(cont,gbc);
 
         GridBagConstraints nGbc = new GridBagConstraints();
@@ -112,9 +109,28 @@ public class Sidebar extends JPanel {
         gbc.gridy=5;
         gbc.gridx =0;
         gbc.gridwidth =4;
-        gbc.weighty = 1;
         gbc.insets = new Insets(10,0,10,0);
         add(hl2,gbc);
+
+        polygonPicker = new JComboBox<>();
+        gbc.gridy = 6;
+        gbc.insets = new Insets(5,0,0,0);
+
+        add(polygonPicker,gbc);
+
+        addPolygonBtn = new JButton();
+        addPolygonBtn.setText("+");
+        gbc.insets = new Insets(5,5,5,5);
+        gbc.gridy = 7;
+        gbc.gridwidth = 2;
+        gbc.weightx = 0;
+        add(addPolygonBtn,gbc);
+
+        removePolygonBtn = new JButton();
+        removePolygonBtn.setText("-");
+        gbc.gridx = 2;
+        gbc.weighty =1;
+        add(removePolygonBtn,gbc);
 
 
 

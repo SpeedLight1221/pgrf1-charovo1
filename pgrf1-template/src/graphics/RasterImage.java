@@ -25,6 +25,8 @@ public class RasterImage implements Raster{
         }
     }
 
+
+
     @Override
     public void clear(int color) {
         Graphics graphics = image.getGraphics();

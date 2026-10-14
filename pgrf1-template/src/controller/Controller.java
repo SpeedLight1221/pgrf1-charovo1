@@ -27,17 +27,13 @@ import java.util.List;
  */
 public class Controller {
 
-    private static Controller controller;
 
-    public static Controller get(){
-        return controller;
-    }
+
 
     private Point startPoint;
-    private Point endPoint;
     private Point currentPoint;
     private Point editSelected;
-    ArrayList<Line> lineList = new ArrayList<Line>();
+    List<Line> lineList;
 
     private int lineColor = 0x00FF00;
     private static final int PREVIEW_COLOR = 0xFF0000;
@@ -49,7 +45,10 @@ public class Controller {
     private final LineRasterizer lineRasterizer;
     private final PolygonRasterizer polygonRasterizer;
 
-    private Polygon poly;
+    private Polygon selectedPolygon;
+    private final List<Polygon> polygonList;
+
+    private int polyIdCounter =0;
 
     public Mode currentMode;
 
@@ -64,10 +63,14 @@ public class Controller {
         this.canvas = canvas;
         this.sidebar = sidebar;
         this.window = window;
-        controller = this;
         lineRasterizer = new TrivialLineRasterizer(canvas.getRaster());
         polygonRasterizer = new PolygonOutlineRasterizer(lineRasterizer);
-        poly = new Polygon();// todo pridavani do polygonu
+        polygonList  = new ArrayList<Polygon>();
+        polygonList.add(new Polygon());
+        selectedPolygon = polygonList.getFirst();
+        selectedPolygon.polygonId =0;
+        sidebar.polygonPicker.addItem("Polygon 0");
+        lineList = selectedPolygon.Lines;
         currentMode = Mode.DRAW;
 
 
@@ -104,6 +107,7 @@ public class Controller {
            public void mousePressed(MouseEvent e) {
                super.mousePressed(e);
 
+
                if(currentMode == Mode.DRAW){
                    drawMousePress(e);
                }
@@ -119,6 +123,7 @@ public class Controller {
            @Override
            public void mouseReleased(MouseEvent e) {
                super.mouseReleased(e);
+
 
                if(currentMode == Mode.DRAW){
                    drawMouseRelease(e);
@@ -152,54 +157,98 @@ public class Controller {
 
         //region sidebarEvents
 
-        sidebar.drawRadioBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                currentMode = Mode.DRAW;
-                renderMain(false,false);
-            }
+        sidebar.drawRadioBtn.addActionListener(e -> {
+            currentMode = Mode.DRAW;
+            renderMain(false,false);
         });
 
-        sidebar.editRadioBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                currentMode = Mode.EDIT;
-                renderMain(false,true);
+        sidebar.editRadioBtn.addActionListener(e -> {
+            currentMode = Mode.EDIT;
+            renderMain(false,true);
 
-            }
         });
 
-        sidebar.deleteRadioBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                currentMode = Mode.DELETE;
-                renderMain(false,true);
+        sidebar.deleteRadioBtn.addActionListener(e -> {
+            currentMode = Mode.DELETE;
+            renderMain(false,true);
 
-            }
         });
 
-        sidebar.colorPickBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Color selected = JColorChooser.showDialog(sidebar, "Pick Color", new Color(lineColor));
-                if(selected != null){
-                    sidebar.lineColorRect.setBackground(selected);
-                    lineColor = selected.getRGB();
-                }
-
-
+        sidebar.colorPickBtn.addActionListener(e -> {
+            Color selected = JColorChooser.showDialog(sidebar, "Pick Color", new Color(lineColor));
+            if(selected != null){
+                sidebar.lineColorRect.setBackground(selected);
+                lineColor = selected.getRGB();
 
             }
+
+
+
         });
 
-        sidebar.applyToAllBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                for(Line l : lineList){
-                    l.setColor(lineColor);
-                }
-                renderMain();
+        sidebar.applyToAllBtn.addActionListener(e -> {
+            for(Line l : lineList){
+                l.setColor(lineColor);
             }
+            renderMain();
+        });
+
+        sidebar.polygonPicker.addActionListener(e -> {
+            int ind = sidebar.polygonPicker.getSelectedIndex();
+
+            if(ind > polygonList.size()-1){
+                ind =polygonList.size()-1;
+            }
+
+
+            selectedPolygon = polygonList.get(ind);
+            lineList = selectedPolygon.GetLines();
+            renderMain();
+
+
+
+
+
+
+        });
+
+        sidebar.addPolygonBtn.addActionListener(e -> {
+
+            if(polygonList.size() >= 10) {
+                return;
+            }
+
+            polygonList.add(new Polygon());
+
+            int ID = ++polyIdCounter;
+            polygonList.getLast().polygonId = ID;
+            sidebar.polygonPicker.addItem("Polygon " + ID);
+
+
+        });
+
+        sidebar.removePolygonBtn.addActionListener(e -> {
+            if(polygonList.size() == 1){
+                return;
+            }
+
+            int ind = sidebar.polygonPicker.getSelectedIndex();
+            polygonList.remove(ind);
+            sidebar.polygonPicker.removeItemAt(ind);
+
+           if(ind > polygonList.size()-1){
+                selectedPolygon = polygonList.getLast();
+                sidebar.polygonPicker.setSelectedIndex(polygonList.size()-1);
+            }
+            else {
+                selectedPolygon = polygonList.get(ind);
+                sidebar.polygonPicker.setSelectedIndex(ind);
+            }
+
+            lineList = selectedPolygon.GetLines();
+            renderMain();
+
+
         });
 
         //endregion
@@ -210,17 +259,14 @@ public class Controller {
 
     //region eventHandlers
 
-
-
-
-    private Action keyPressedC = new AbstractAction() {
+    private final Action keyPressedC = new AbstractAction() {
         @Override
         public void actionPerformed(ActionEvent e) {
           clearCanvas();
         }
     };
 
-    private Action keyPressedE = new AbstractAction() {
+    private final Action keyPressedE = new AbstractAction() {
         @Override
         public void actionPerformed(ActionEvent e) {
             switchMode();
@@ -258,10 +304,14 @@ public class Controller {
     }
 
     private void clearCanvas(){
-        lineList.clear();
+        for(Polygon p : polygonList){
+            p.Lines.clear();
+        }
         canvas.clear();
         canvas.repaint();
     }
+
+
     //endregion
 
     //region drawModeFunctions
@@ -274,13 +324,25 @@ public class Controller {
             startPoint = getPoint(e);
         }
 
+
+
         currentPoint = startPoint;
 
         renderMain(true,false);
         drawModePreview();
     }
 
+
     private void drawMouseRelease(MouseEvent e){
+        if(e.getX() < 0 || e.getX() > canvas.getWidth() || e.getY() < 0 || e.getY() > canvas.getHeight() )
+        {
+            startPoint = null;
+            currentPoint = null;
+            renderMain();
+            return;
+        }
+
+
         if(lineList.size() > 2){
             Line closest = getClosestLine(getPoint(e));
             lineList.add(new Line(closest.getP1(),currentPoint, lineColor));
@@ -291,6 +353,8 @@ public class Controller {
         {
             lineList.add(new Line(startPoint,getPoint(e), lineColor));
         }
+
+
 
 
         startPoint = null ;
@@ -337,6 +401,15 @@ public class Controller {
         if(lineList.isEmpty())
             return;
         if(editSelected == null) return;
+
+        if(e.getX() < 0 || e.getX() > canvas.getWidth() || e.getY() < 0 || e.getY() > canvas.getHeight() )
+        {
+            renderMain(false,true);
+            editModePreview();
+            return;
+        }
+
+
         editSelected.setX(e.getX());
         editSelected.setY(e.getY());
 
@@ -350,7 +423,7 @@ public class Controller {
         private void deleteMousePress(MouseEvent e)
         {
             for(Line l : lineList){
-                System.out.println(l.getP1().printC() + " to " + l.getP2().printC());
+
             }
             if(lineList.isEmpty())
                 return;
@@ -359,12 +432,12 @@ public class Controller {
 
             Point toDel = getClosestPointInRange(getPoint(e),5);
 
-            System.out.println(toDel + " todel");
+
             if(toDel == null) return;
 
 
             List<Line> toMerge = getLinesByCommonPoint(toDel);
-            System.out.println(toMerge.size() + " tmSize");
+
 
             if(toMerge.size() == 1){
                 lineList.remove(toMerge.getFirst());
@@ -373,7 +446,12 @@ public class Controller {
                 List<Point> edgs = getEdgePoints(toMerge,toDel);
 
                 if(lineList.size()!=3){
-                    lineList.add(new Line(edgs.getFirst(), edgs.getLast(), lineColor));
+                    if (edgs != null) {
+                        lineList.add(new Line(edgs.getFirst(), edgs.getLast(), lineColor));
+                    }
+                    else {
+                        return;
+                    }
                 }
 
                 lineList.remove(toMerge.getFirst());
@@ -387,6 +465,7 @@ public class Controller {
     //endregion
 
     //region utils
+
 
     private List<Line> getLinesByCommonPoint(Point com){
 
@@ -427,7 +506,7 @@ public class Controller {
         double dist = -1;
 
 
-        for(Line l : poly.GetLines())
+        for(Line l : selectedPolygon.GetLines())
         {
             double cdist = l.getMid().pointDistance(curr);
             if(dist > cdist || dist == -1)
@@ -446,7 +525,7 @@ public class Controller {
         double dist = -1;
         Point closest = null;
 
-        for (Line l : poly.GetLines()){
+        for (Line l : selectedPolygon.GetLines()){
             double p1D = l.getP1().pointDistance(at);
             double p2D = l.getP2().pointDistance(at);
 
@@ -489,9 +568,12 @@ public class Controller {
         if(mids) renderMids();
         if(points) renderPoints();
 
-        renderPolygon();
+        renderPolygons();
+
+
 
         canvas.repaint();
+
 
 
     }
@@ -522,12 +604,12 @@ public class Controller {
     private void drawModePreview(){
 
 
-        if(lineList.size() == 0){
+        if(lineList.isEmpty()){
             previewRender(startPoint,currentPoint);
 
         }
         else if (lineList.size() == 1){
-            Line l = lineList.get(0);
+            Line l = lineList.getFirst();
             previewRender(l.getP1(),l.getP2(),currentPoint);
         }
         else
@@ -585,7 +667,7 @@ public class Controller {
         for(Line l:lineList){
 
 
-            Point mid = l.getMid();
+
             for(int i = -2; i < 3; i++){
                 for(int j = -2; j < 3; j++){
 
@@ -609,10 +691,13 @@ public class Controller {
 
 
 
-    private void renderPolygon(){
+    private void renderPolygons(){
 
-        poly = new Polygon(lineList);
-        polygonRasterizer.rasterize(poly);
+        for (Polygon p : polygonList){
+            polygonRasterizer.rasterize(p);
+        }
+
+
 
     }
 

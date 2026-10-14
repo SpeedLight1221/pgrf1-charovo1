@@ -21,12 +21,27 @@ public class Canvas extends JPanel {
 
     private final RasterImage image;
 
+    @Override
+    public int getWidth() {
+        return width;
+    }
+
+    @Override
+    public int getHeight() {
+        return height;
+    }
+
+    private final int width;
+    private final int height;
+
     private static final Color BACKGROUND_COLOR = new Color(0x2F2F2F);
 
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Constructors -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
     public Canvas(int width, int height) {
         setPreferredSize(new Dimension(width, height));
+        this.width = width;
+        this.height = height;
         image = new RasterImage(width,height);
         clear();
     }
