@@ -655,10 +655,12 @@ public class Controller {
     private void renderMain(boolean mids, boolean points){
         canvas.clear();
 
-        if(mids) renderMids();
-        if(points) renderPoints();
 
         renderPolygons();
+
+
+        if(mids) renderMids();
+        if(points) renderPoints();
 
 
 
@@ -784,16 +786,16 @@ public class Controller {
     private void renderPolygons(){
 
         for (Polygon p : polygonList){
-            polygonRasterizer.rasterize(p);
+
 
             if(p.scanLineFill == true && p.Lines.size() > 2){
-
                 p.fillColor = (p.fillColor == 0) ? fillColor : p.fillColor;
-
                 polygonFiller.fill(p,p.fillColor);
+                polygonRasterizer.rasterize(p);
                 continue;
             }
 
+            polygonRasterizer.rasterize(p);
             if(p.fillSeed != null && p.Lines.size() > 2){
                 p.fillColor = (p.fillColor == 0) ? fillColor : p.fillColor;
                 seedFiller.fill(p.fillSeed.getX(), p.fillSeed.getY(), canvas.getBackgroundColor().getRGB(), fillColor);

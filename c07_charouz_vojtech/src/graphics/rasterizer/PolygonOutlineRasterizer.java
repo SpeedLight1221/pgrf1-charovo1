@@ -23,7 +23,7 @@ public class PolygonOutlineRasterizer implements PolygonRasterizer {
             Line l1 = ls.getFirst();
             Line l2 =ls.getLast();
 
-            ls.add(new Line(l1.getP1(),l2.getP2(),l2.getColor()));
+            ls.add(new Line(l2.getP2(),l1.getP1(),l2.getColor()));
         }
 
 

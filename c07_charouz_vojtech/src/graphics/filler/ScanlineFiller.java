@@ -22,7 +22,7 @@ public class ScanlineFiller implements PolygonFiller{
 
         Line last = edges.getLast();
         Line first = edges.getFirst();
-        edges.add(new Line(last.getP2(),first.getP1(),first.getColor()));
+
 
         //
         int maxY = 0;
