@@ -6,7 +6,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="pgrf1-charovo1" />
+        <module name="c07_charouz_vojtech" />
       </profile>
     </annotationProcessing>
   </component>

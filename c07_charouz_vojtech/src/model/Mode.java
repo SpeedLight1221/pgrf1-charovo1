@@ -3,5 +3,6 @@ package model;
 public enum Mode {
     EDIT,
     DRAW,
-    DELETE
+    DELETE,
+    SEEDFILL
 }

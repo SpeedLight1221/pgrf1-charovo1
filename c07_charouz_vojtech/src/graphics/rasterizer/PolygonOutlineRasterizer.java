@@ -1,6 +1,5 @@
 package graphics.rasterizer;
 
-import graphics.Raster;
 import model.Line;
 import model.Polygon;
 
@@ -17,7 +16,7 @@ public class PolygonOutlineRasterizer implements PolygonRasterizer {
     @Override
     public void rasterize(Polygon polygon) {
 
-        List<Line> ls = polygon.GetLines();
+        List<Line> ls = polygon.getLines();
 
         if(ls.size() == 2)
         {

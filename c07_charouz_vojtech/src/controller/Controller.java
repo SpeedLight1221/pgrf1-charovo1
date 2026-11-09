@@ -1,5 +1,6 @@
 package controller;
 
+import graphics.filler.*;
 import graphics.rasterizer.LineRasterizer;
 import graphics.rasterizer.PolygonOutlineRasterizer;
 import graphics.rasterizer.PolygonRasterizer;
@@ -37,6 +38,7 @@ public class Controller {
 
     private int lineColor = 0x00FF00;
     private static final int PREVIEW_COLOR = 0xFF0000;
+    private int fillColor = 0xFF0000;
 
 
     private final Canvas canvas;
@@ -51,6 +53,11 @@ public class Controller {
     private int polyIdCounter =0;
 
     public Mode currentMode;
+
+    private Point seedFillPoint;
+    private SeedFiller seedFiller;
+
+    private PolygonFiller polygonFiller;
 
 
 
@@ -72,6 +79,8 @@ public class Controller {
         sidebar.polygonPicker.addItem("Polygon 0");
         lineList = selectedPolygon.Lines;
         currentMode = Mode.DRAW;
+        seedFiller = new StackSeedFiller(canvas.getRaster());
+        polygonFiller = new ScanlineFiller(canvas.getRaster());
 
 
 
@@ -117,6 +126,9 @@ public class Controller {
                else if(currentMode == Mode.DELETE){
                    deleteMousePress(e);
                }
+               else if(currentMode == Mode.SEEDFILL){
+                   seedFillAt(e);
+               }
 
            }
 
@@ -130,6 +142,9 @@ public class Controller {
                }
                else if(currentMode == Mode.EDIT){
                     editMouseRelease(e);
+               }
+               else if(currentMode == Mode.SEEDFILL){
+                   disableSeedFill();
                }
 
            }
@@ -174,7 +189,7 @@ public class Controller {
 
         });
 
-        sidebar.colorPickBtn.addActionListener(e -> {
+        sidebar.lineColorPickBtn.addActionListener(e -> {
             Color selected = JColorChooser.showDialog(sidebar, "Pick Color", new Color(lineColor));
             if(selected != null){
                 sidebar.lineColorRect.setBackground(selected);
@@ -202,7 +217,7 @@ public class Controller {
 
 
             selectedPolygon = polygonList.get(ind);
-            lineList = selectedPolygon.GetLines();
+            lineList = selectedPolygon.getLines();
             renderMain();
 
 
@@ -245,10 +260,46 @@ public class Controller {
                 sidebar.polygonPicker.setSelectedIndex(ind);
             }
 
-            lineList = selectedPolygon.GetLines();
+            lineList = selectedPolygon.getLines();
             renderMain();
 
 
+        });
+
+
+        sidebar.seedFillBtn.addActionListener( e -> {
+            if(currentMode == Mode.SEEDFILL){
+                currentMode = Mode.DRAW;
+                sidebar.drawRadioBtn.setSelected(true);
+                sidebar.seedFillBtn.setText("Seed Fill");
+            }
+            else {
+                currentMode = Mode.SEEDFILL;
+                sidebar.seedFillBtn.setText("Cancel");
+
+
+            }
+        });
+
+        sidebar.fillColorPickBtn.addActionListener(e -> {
+            Color selected = JColorChooser.showDialog(sidebar, "Pick Color", new Color(fillColor));
+            if(selected != null){
+                sidebar.fillColorRect.setBackground(selected);
+                fillColor = selected.getRGB();
+
+            }
+        });
+
+        sidebar.scanLineFillBtn.addActionListener(e -> {
+
+            if(selectedPolygon.Lines.size() > 2){
+
+                selectedPolygon.fillColor = fillColor;
+                selectedPolygon.fillSeed = null;
+                selectedPolygon.scanLineFill = true;
+
+                renderMain();
+            }
         });
 
         //endregion
@@ -422,13 +473,9 @@ public class Controller {
 
         private void deleteMousePress(MouseEvent e)
         {
-            for(Line l : lineList){
 
-            }
             if(lineList.isEmpty())
                 return;
-
-
 
             Point toDel = getClosestPointInRange(getPoint(e),5);
 
@@ -464,7 +511,50 @@ public class Controller {
         }
     //endregion
 
+    //region fillFunctions
+
+    private void seedFillAt(MouseEvent event) {
+
+
+        if(selectedPolygon.Lines.size() < 3){
+            disableSeedFill();
+            return;
+        }
+
+
+        Point seed = getPoint(event);
+        Integer seedColor = canvas.getRaster().getPixel(seed.getX(), seed.getY());
+        if (selectedPolygon.fillSeed != null && seedColor != null && seedColor == fillColor) {
+            selectedPolygon.fillSeed= null;
+            renderMain();
+
+
+            return;
+        }
+
+
+        boolean filled = seedFiller.fill(seed.getX(), seed.getY(),canvas.getBackgroundColor().getRGB(),fillColor);
+        if (filled) {
+            selectedPolygon.fillSeed = seed;
+            selectedPolygon.fillColor = fillColor;
+            selectedPolygon.scanLineFill = false;
+
+
+            renderMain();
+
+        }
+    }
+
+
+    //endregion
+
     //region utils
+
+    private void disableSeedFill(){
+        currentMode = Mode.DRAW;
+        sidebar.drawRadioBtn.setSelected(true);
+        sidebar.seedFillBtn.setText("Seed Fill");
+    }
 
 
     private List<Line> getLinesByCommonPoint(Point com){
@@ -506,7 +596,7 @@ public class Controller {
         double dist = -1;
 
 
-        for(Line l : selectedPolygon.GetLines())
+        for(Line l : selectedPolygon.getLines())
         {
             double cdist = l.getMid().pointDistance(curr);
             if(dist > cdist || dist == -1)
@@ -525,7 +615,7 @@ public class Controller {
         double dist = -1;
         Point closest = null;
 
-        for (Line l : selectedPolygon.GetLines()){
+        for (Line l : selectedPolygon.getLines()){
             double p1D = l.getP1().pointDistance(at);
             double p2D = l.getP2().pointDistance(at);
 
@@ -695,7 +785,27 @@ public class Controller {
 
         for (Polygon p : polygonList){
             polygonRasterizer.rasterize(p);
+
+            if(p.scanLineFill == true && p.Lines.size() > 2){
+
+                p.fillColor = (p.fillColor == 0) ? fillColor : p.fillColor;
+
+                polygonFiller.fill(p,p.fillColor);
+                continue;
+            }
+
+            if(p.fillSeed != null && p.Lines.size() > 2){
+                p.fillColor = (p.fillColor == 0) ? fillColor : p.fillColor;
+                seedFiller.fill(p.fillSeed.getX(), p.fillSeed.getY(), canvas.getBackgroundColor().getRGB(), fillColor);
+
+            }
+            else
+            {
+                p.fillSeed = null;
+            }
         }
+
+
 
 
 

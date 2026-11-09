@@ -31,6 +31,10 @@ public class Canvas extends JPanel {
         return height;
     }
 
+    public Color getBackgroundColor(){
+        return BACKGROUND_COLOR;
+    }
+
     private final int width;
     private final int height;
 

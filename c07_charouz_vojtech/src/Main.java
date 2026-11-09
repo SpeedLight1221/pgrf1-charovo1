@@ -18,6 +18,8 @@ public class Main {
         invokeLater(() -> {
             Window window = new Window(800, 600);
             new Controller(window,window.getCanvas(),window.getSidebar()).init();
+
+
         });
     }
 

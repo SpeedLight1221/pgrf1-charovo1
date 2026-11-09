@@ -17,12 +17,17 @@ public class Sidebar extends JPanel {
     public JRadioButton editRadioBtn;
     public JRadioButton drawRadioBtn;
     public JRadioButton deleteRadioBtn;
-    public JButton colorPickBtn;
+    public JButton lineColorPickBtn;
     public JPanel lineColorRect;
     public JButton applyToAllBtn;
     public JComboBox<String> polygonPicker;
     public JButton addPolygonBtn;
     public JButton removePolygonBtn;
+    public JPanel fillColorRect;
+    public JButton fillColorPickBtn;
+    public JButton seedFillBtn;
+    public JButton scanLineFillBtn;
+
 
     public void populateSidebar(){
         GridBagConstraints gbc = new GridBagConstraints();
@@ -67,8 +72,18 @@ public class Sidebar extends JPanel {
         add(hl1,gbc);
 
 
+        ColorPicker lineColorPick = new ColorPicker();
+        gbc.gridy = 3;
+        gbc.gridx =0;
+        gbc.gridwidth =4;
+        gbc.ipady = 0;
+        gbc.insets = new Insets(0,5,0,5);
+        add(lineColorPick.getCont(),gbc);
+        lineColorRect = lineColorPick.getColorRect();
+        lineColorPickBtn = lineColorPick.getPickerBtn();
 
-        JPanel cont = new JPanel(new GridBagLayout());
+
+        /*JPanel cont = new JPanel(new GridBagLayout());
         cont.setOpaque(false);
         gbc.gridy = 3;
         gbc.gridx =0;
@@ -89,12 +104,14 @@ public class Sidebar extends JPanel {
 
         cont.add(lineColorRect,nGbc);
 
+
+
         colorPickBtn = new JButton();
         colorPickBtn.setText("Pick");
         nGbc.fill = GridBagConstraints.HORIZONTAL;
         nGbc.gridx = 1;
         nGbc.weightx = 3;
-        cont.add(colorPickBtn,nGbc);
+        cont.add(colorPickBtn,nGbc);*/
 
         applyToAllBtn = new JButton();
         applyToAllBtn.setText("Apply to All");
@@ -129,8 +146,40 @@ public class Sidebar extends JPanel {
         removePolygonBtn = new JButton();
         removePolygonBtn.setText("-");
         gbc.gridx = 2;
-        gbc.weighty =1;
         add(removePolygonBtn,gbc);
+
+        JSeparator hl3 = new JSeparator();
+        gbc.insets = new Insets(10,0,10,0);
+        gbc.gridy = 8;
+        gbc.gridx =0;
+        gbc.gridwidth =4;
+        add(hl3,gbc);
+
+        ColorPicker fillColorPicker = new ColorPicker();
+        gbc.gridy = 9;
+        gbc.ipady = 0;
+        gbc.insets = new Insets(0,5,0,5);
+        add(fillColorPicker.getCont(),gbc);
+        fillColorRect = fillColorPicker.getColorRect();
+        fillColorPickBtn = fillColorPicker.getPickerBtn();
+
+        seedFillBtn = new JButton();
+        seedFillBtn.setText("Seed Fill");
+        gbc.gridy = 10;
+        gbc.insets = new Insets(10,0,5,0);
+        add(seedFillBtn,gbc);
+
+        scanLineFillBtn = new JButton();
+        scanLineFillBtn.setText("ScanLine");
+        gbc.insets = new Insets(5,0,10,0);
+        gbc.gridy = 11;
+        gbc.weighty =1;
+        add(scanLineFillBtn,gbc);
+
+
+
+
+
 
 
 
