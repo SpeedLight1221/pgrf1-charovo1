@@ -1,5 +1,7 @@
 package controller;
 
+import graphics.cropper.PolygonCropper;
+import graphics.cropper.SHPolygonCropper;
 import graphics.filler.*;
 import graphics.rasterizer.LineRasterizer;
 import graphics.rasterizer.PolygonOutlineRasterizer;
@@ -47,10 +49,12 @@ public class Controller {
     private final LineRasterizer lineRasterizer;
     private final PolygonRasterizer polygonRasterizer;
 
+    private Polygon cutPolygon;
+
     private Polygon selectedPolygon;
     private final List<Polygon> polygonList;
 
-    private int polyIdCounter =0;
+    private int polyIdCounter =1;
 
     public Mode currentMode;
 
@@ -58,6 +62,8 @@ public class Controller {
     private SeedFiller seedFiller;
 
     private PolygonFiller polygonFiller;
+
+    private PolygonCropper polygonCropper;
 
 
 
@@ -73,14 +79,22 @@ public class Controller {
         lineRasterizer = new TrivialLineRasterizer(canvas.getRaster());
         polygonRasterizer = new PolygonOutlineRasterizer(lineRasterizer);
         polygonList  = new ArrayList<Polygon>();
+        cutPolygon = new Polygon();
+        cutPolygon.lineOverrideColor = 0xFF0000;
+        cutPolygon.polygonId = 0;
+        polygonList.add(cutPolygon);
         polygonList.add(new Polygon());
-        selectedPolygon = polygonList.getFirst();
-        selectedPolygon.polygonId =0;
-        sidebar.polygonPicker.addItem("Polygon 0");
+        selectedPolygon = polygonList.get(1);
+        selectedPolygon.polygonId =1;
+        sidebar.polygonPicker.addItem("Cut Polygon");
+
+        sidebar.polygonPicker.addItem("Polygon 1");
+        sidebar.polygonPicker.setSelectedIndex(1);
         lineList = selectedPolygon.Lines;
         currentMode = Mode.DRAW;
         seedFiller = new StackSeedFiller(canvas.getRaster());
         polygonFiller = new ScanlineFiller(canvas.getRaster());
+        polygonCropper = new SHPolygonCropper();
 
 
 
@@ -103,6 +117,12 @@ public class Controller {
 
         IM.put(KeyStroke.getKeyStroke("E"),"pressedE");
         AM.put("pressedE",keyPressedE);
+
+        IM.put(KeyStroke.getKeyStroke("T"),"pressedT");
+        AM.put("pressedT",keyPressedT);
+
+        IM.put(KeyStroke.getKeyStroke("O"),"pressedO");
+        AM.put("pressedO",keyPressedO);
 
 
 
@@ -243,11 +263,16 @@ public class Controller {
         });
 
         sidebar.removePolygonBtn.addActionListener(e -> {
-            if(polygonList.size() == 1){
+            if(polygonList.size() == 2){
                 return;
             }
 
+
+
             int ind = sidebar.polygonPicker.getSelectedIndex();
+
+            if(ind == 0) return;
+
             polygonList.remove(ind);
             sidebar.polygonPicker.removeItemAt(ind);
 
@@ -268,6 +293,8 @@ public class Controller {
 
 
         sidebar.seedFillBtn.addActionListener( e -> {
+            if(selectedPolygon.polygonId == 0) return;
+
             if(currentMode == Mode.SEEDFILL){
                 currentMode = Mode.DRAW;
                 sidebar.drawRadioBtn.setSelected(true);
@@ -292,7 +319,7 @@ public class Controller {
 
         sidebar.scanLineFillBtn.addActionListener(e -> {
 
-            if(selectedPolygon.Lines.size() > 2){
+            if(selectedPolygon.Lines.size() > 2 && selectedPolygon.polygonId != 0){
 
                 selectedPolygon.fillColor = fillColor;
                 selectedPolygon.fillSeed = null;
@@ -300,6 +327,13 @@ public class Controller {
 
                 renderMain();
             }
+        });
+
+        sidebar.removeFillBtn.addActionListener(e ->{
+            selectedPolygon.scanLineFill = false;
+            selectedPolygon.fillSeed = null;
+            selectedPolygon.fillColor = fillColor;
+            renderMain();
         });
 
         //endregion
@@ -321,6 +355,28 @@ public class Controller {
         @Override
         public void actionPerformed(ActionEvent e) {
             switchMode();
+        }
+    };
+
+    private final Action keyPressedT = new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            for(Line l : polygonList.get(1).getLines()){
+                System.out.println(l.getP1() + " ----> " + l.getP2());
+            }
+            System.out.println(cutPolygon.isClockWise());
+            System.out.println("------------");
+
+
+            renderMain(false,true);
+        }
+    };
+
+
+    private final Action keyPressedO = new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            cropCurrent();
         }
     };
 
@@ -491,18 +547,27 @@ public class Controller {
             }
             else if(toMerge.size() == 2){
                 List<Point> edgs = getEdgePoints(toMerge,toDel);
-
+                Line n;
                 if(lineList.size()!=3){
-                    if (edgs != null) {
-                        lineList.add(new Line(edgs.getFirst(), edgs.getLast(), lineColor));
+                    if (edgs == null) return;
+
+                    n = new Line(edgs.getFirst(), edgs.getLast(), lineColor);
+                    lineList.remove(toMerge.getFirst());
+                    lineList.remove(toMerge.getLast());
+                    if(lineList.stream().anyMatch(x -> n.getP1().pointsEqual(x.getP1()) || n.getP2().pointsEqual(x.getP2()))){
+                        n.swapPoints();
                     }
-                    else {
-                        return;
-                    }
+                    lineList.add(n);
+
+                }
+                else
+                {
+                    lineList.remove(toMerge.getFirst());
+                    lineList.remove(toMerge.getLast());
                 }
 
-                lineList.remove(toMerge.getFirst());
-                lineList.remove(toMerge.getLast());
+
+
             }
 
             renderMain(false,true);
@@ -516,7 +581,7 @@ public class Controller {
     private void seedFillAt(MouseEvent event) {
 
 
-        if(selectedPolygon.Lines.size() < 3){
+        if(selectedPolygon.Lines.size() < 3 || selectedPolygon.polygonId == 0){
             disableSeedFill();
             return;
         }
@@ -547,6 +612,20 @@ public class Controller {
 
 
     //endregion
+
+
+    //region cropFunctions
+        public void cropCurrent(){
+            if(selectedPolygon == cutPolygon) return;
+
+            int in = polygonList.indexOf(selectedPolygon);
+
+            polygonList.set(in,polygonCropper.cropPolygon(polygonList.get(in),cutPolygon));
+            renderMain();
+        }
+
+    //endregion
+
 
     //region utils
 
@@ -664,6 +743,9 @@ public class Controller {
 
 
 
+
+
+
         canvas.repaint();
 
 
@@ -715,8 +797,13 @@ public class Controller {
     private void previewRender(Point p1, Point p2){
 
 
+        int clr = PREVIEW_COLOR;
+        if(selectedPolygon == cutPolygon){
+            clr = 0x00FF00;
+        }
 
-        Line prwLine = new Line(p1,p2,PREVIEW_COLOR);
+
+        Line prwLine = new Line(p1,p2,clr);
         lineRasterizer.rasterize(prwLine);
         canvas.repaint();
 
@@ -725,8 +812,14 @@ public class Controller {
     }
 
     private void previewRender(Point p1, Point p2, Point midP){
-        Line prwL1 = new Line(p1, midP, PREVIEW_COLOR);
-        Line prwL2 = new Line(p2, midP, PREVIEW_COLOR);
+
+        int clr = PREVIEW_COLOR;
+        if(selectedPolygon == cutPolygon){
+            clr = 0x00FF00;
+        }
+
+        Line prwL1 = new Line(p1, midP, clr);
+        Line prwL2 = new Line(p2, midP, clr);
         lineRasterizer.rasterize(prwL1);
         lineRasterizer.rasterize(prwL2);
         canvas.repaint();
@@ -756,7 +849,11 @@ public class Controller {
     }
 
     private void renderPoints(){
+
+        float b = 0.1f;
         for(Line l:lineList){
+
+//TODO : currently uses progressivly brighter to indicate orientation, change back to static
 
 
 
@@ -765,17 +862,26 @@ public class Controller {
 
                     int x1 =l.getP1().getX()+i;
                     int y1 = l.getP1().getY()+j;
+                    Color c =  new Color(0,0,b);
 
-                    canvas.getRaster().setPixel(x1, y1,0x0000FF );
+                    canvas.getRaster().setPixel(x1, y1, c.getRGB() );
 
 
-                    int x2 =l.getP2().getX()+i;
-                    int y2 = l.getP2().getY()+j;
 
-                    canvas.getRaster().setPixel(x2, y2,0x0000FF );
+                    if(lineList.size() == 1){
+                        int x2 =l.getP2().getX()+i;
+                        int y2 = l.getP2().getY()+j;
+
+                        canvas.getRaster().setPixel(x2, y2,0x0000FF );
+                    }
+
 
                 }
             }
+            b += 0.2f;
+
+            if(b > 1) b =1f;
+
 
 
         }
@@ -786,6 +892,8 @@ public class Controller {
     private void renderPolygons(){
 
         for (Polygon p : polygonList){
+
+            if(p.polygonId == 0) continue;
 
 
             if(p.scanLineFill == true && p.Lines.size() > 2){
@@ -806,6 +914,8 @@ public class Controller {
                 p.fillSeed = null;
             }
         }
+
+        polygonRasterizer.rasterize(cutPolygon);
 
 
 

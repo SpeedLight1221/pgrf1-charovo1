@@ -1,5 +1,8 @@
 package model;
 
+import java.awt.*;
+import java.util.Random;
+
 public class Point {
 
 
@@ -25,6 +28,14 @@ public class Point {
     public Point(int x, int y) {
         this.x = x;
         this.y = y;
+
+        Random rnd = new Random(x+y);
+        float r = rnd.nextFloat();
+        float g = rnd.nextFloat();
+        float b = rnd.nextFloat();
+        debugColor = (new Color(r,g,b)).getRGB();
+
+
     }
 
     public double pointDistance(Point p){
@@ -40,5 +51,20 @@ public class Point {
     }
 
 
+    @Override
+    public String toString() {
+        return  x + " | " + y + "(" + Integer.toHexString(debugColor) + ")";
+    }
 
+    public boolean pointsEqual(Point tc){
+        if(tc.getX() == this.x && tc.getY() == y) return  true;
+
+        return false;
+    }
+
+    public int debugColor;
+
+    public static float crossProduct(Point A, Point B, Point M){
+        return Math.signum((B.getX()- A.getX())*(M.getY()- A.getY())-(B.getY()- A.getY())*(M.getX()- A.getX()));
+    }
 }

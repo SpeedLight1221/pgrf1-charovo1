@@ -16,6 +16,8 @@ public class PolygonOutlineRasterizer implements PolygonRasterizer {
     @Override
     public void rasterize(Polygon polygon) {
 
+
+
         List<Line> ls = polygon.getLines();
 
         if(ls.size() == 2)
@@ -29,6 +31,9 @@ public class PolygonOutlineRasterizer implements PolygonRasterizer {
 
         for(Line l : ls)
         {
+            if(polygon.lineOverrideColor != -1){
+                l.setColor(polygon.lineOverrideColor);
+            }
             lRast.rasterize(l);
         }
 

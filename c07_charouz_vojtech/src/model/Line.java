@@ -1,8 +1,8 @@
 package model;
 
 public class Line {
-    private final Point p1;
-    private final Point p2;
+    private Point p1;
+    private Point p2;
     private int Color;
 
     public Line(Point p1, Point p2, int color) {
@@ -32,5 +32,30 @@ public class Line {
         int mY = (p1.getY()+p2.getY())/2;
 
         return  new Point(mX,mY);
+    }
+
+    public void swapPoints()
+    {
+        Point p = p1;
+        p1 = p2;
+        p2 = p;
+    }
+
+    public static int YInterpolation(int Y, Line toCheck){
+        if(toCheck.p2.getY() > Y && toCheck.p1.getY() > 1) return -1;
+        if(toCheck.p2.getY() < Y && toCheck.p1.getY() < 1) return -1;
+
+        Y += 0.5;
+
+        double x = toCheck.p1.getX() + (Y- toCheck.p1.getY()) * (toCheck.p2.getX() - toCheck.p1.getX()) / (toCheck.p2.getY()-toCheck.p1.getY());
+
+        int rsx = (int)Math.ceil(x-0.5);
+
+        return rsx;
+
+    }
+
+    public Point getDirectionVector(){
+        return  new Point(p2.getX()-p1.getX(), p2.getY()-p1.getY());
     }
 }

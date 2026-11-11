@@ -27,6 +27,7 @@ public class Sidebar extends JPanel {
     public JButton fillColorPickBtn;
     public JButton seedFillBtn;
     public JButton scanLineFillBtn;
+    public JButton removeFillBtn;
 
 
     public void populateSidebar(){
@@ -171,10 +172,20 @@ public class Sidebar extends JPanel {
 
         scanLineFillBtn = new JButton();
         scanLineFillBtn.setText("ScanLine");
-        gbc.insets = new Insets(5,0,10,0);
+        gbc.insets = new Insets(5,0,5,0);
         gbc.gridy = 11;
-        gbc.weighty =1;
         add(scanLineFillBtn,gbc);
+
+        removeFillBtn = new JButton();
+        removeFillBtn.setText("Clear Fill");
+        gbc.weighty =1;
+        gbc.gridy = 12;
+        gbc.insets = new Insets(5,0,10,0);
+        add(removeFillBtn,gbc);
+
+
+
+
 
 
 
