@@ -31,12 +31,13 @@ import java.util.List;
 public class Controller {
 
 
-
+//region defs
 
     private Point startPoint;
     private Point currentPoint;
     private Point editSelected;
     List<Line> lineList;
+    List<Line> freeLineList;
 
     private int lineColor = 0x00FF00;
     private static final int PREVIEW_COLOR = 0xFF0000;
@@ -50,24 +51,24 @@ public class Controller {
     private final PolygonRasterizer polygonRasterizer;
 
     private Polygon cutPolygon;
+    private Polygon lineCropPolygon;
 
     private Polygon selectedPolygon;
     private final List<Polygon> polygonList;
-
     private int polyIdCounter =1;
 
     public Mode currentMode;
 
     private Point seedFillPoint;
     private SeedFiller seedFiller;
-
     private PolygonFiller polygonFiller;
 
     private PolygonCropper polygonCropper;
+    private Point selectedCropPoint;
 
     public static Controller mainControl;
 
-
+//endregion
 
 
 
@@ -90,6 +91,7 @@ public class Controller {
         selectedPolygon = polygonList.get(1);
         selectedPolygon.polygonId =1;
         sidebar.polygonPicker.addItem("Cut Polygon");
+        freeLineList = new ArrayList<>();
 
         sidebar.polygonPicker.addItem("Polygon 1");
         sidebar.polygonPicker.setSelectedIndex(1);
@@ -98,6 +100,11 @@ public class Controller {
         seedFiller = new StackSeedFiller(canvas.getRaster());
         polygonFiller = new ScanlineFiller(canvas.getRaster());
         polygonCropper = new SHPolygonCropper();
+
+        lineCropPolygon = new Polygon();
+        initLineCropper();
+
+
 
 
 
@@ -139,8 +146,10 @@ public class Controller {
            public void mousePressed(MouseEvent e) {
                super.mousePressed(e);
 
+               System.out.println(e.getX() + "//" + e.getY());
 
-               if(currentMode == Mode.DRAW){
+
+               if(currentMode == Mode.DRAW || currentMode == Mode.DRAWFREE){
                    drawMousePress(e);
                }
                else if(currentMode == Mode.EDIT){
@@ -152,6 +161,9 @@ public class Controller {
                else if(currentMode == Mode.SEEDFILL){
                    seedFillAt(e);
                }
+               else if(currentMode == Mode.LINECROP){
+                   lineCropMousePress(e);
+               }
 
            }
 
@@ -160,7 +172,7 @@ public class Controller {
                super.mouseReleased(e);
 
 
-               if(currentMode == Mode.DRAW){
+               if(currentMode == Mode.DRAW || currentMode == Mode.DRAWFREE){
                    drawMouseRelease(e);
                }
                else if(currentMode == Mode.EDIT){
@@ -168,6 +180,9 @@ public class Controller {
                }
                else if(currentMode == Mode.SEEDFILL){
                    disableSeedFill();
+               }
+               else if(currentMode == Mode.LINECROP){
+                   lineCropMouseRelease(e);
                }
 
            }
@@ -178,11 +193,14 @@ public class Controller {
            @Override
            public void mouseDragged(MouseEvent e) {
                super.mouseDragged(e);
-               if(currentMode == Mode.DRAW){
+               if(currentMode == Mode.DRAW || currentMode == Mode.DRAWFREE ){
                    drawMouseDrag(e);
                }
                else if(currentMode == Mode.EDIT){
                     editMouseDrag(e);
+               }
+               else if(currentMode == Mode.LINECROP){
+                   lineCropMouseDrag(e);
                }
 
 
@@ -212,6 +230,11 @@ public class Controller {
 
         });
 
+        sidebar.freeDrawRadioBtn.addActionListener(e->{
+            currentMode = Mode.DRAWFREE;
+            renderMain(false,false);
+        });
+
         sidebar.lineColorPickBtn.addActionListener(e -> {
             Color selected = JColorChooser.showDialog(sidebar, "Pick Color", new Color(lineColor));
             if(selected != null){
@@ -225,9 +248,20 @@ public class Controller {
         });
 
         sidebar.applyToAllBtn.addActionListener(e -> {
-            for(Line l : lineList){
-                l.setColor(lineColor);
+
+            if(currentMode == Mode.DRAWFREE){
+                for(Line l: freeLineList){
+                    l.setColor(lineColor);
+                }
             }
+            else
+            {
+                for(Line l : lineList){
+                    l.setColor(lineColor);
+                }
+            }
+
+
             renderMain();
         });
 
@@ -339,6 +373,20 @@ public class Controller {
             renderMain();
         });
 
+        sidebar.lineCropBtn.addActionListener(e ->{
+            if(currentMode == Mode.LINECROP){
+                // crop
+                switchMode();
+                sidebar.lineCropBtn.setText("Line Crop");
+            }
+            else
+            {
+                currentMode = Mode.LINECROP;
+                renderMain();
+                sidebar.lineCropBtn.setText("Finish");
+            }
+        });
+
         //endregion
 
 
@@ -407,10 +455,14 @@ public class Controller {
 
         }
         else if(currentMode == Mode.DELETE){
+            currentMode = Mode.DRAWFREE;
+            renderMain(false,false);
+            sidebar.freeDrawRadioBtn.setSelected(true);
+
+        }else  if(currentMode == Mode.DRAWFREE || currentMode == Mode.LINECROP){
             currentMode = Mode.DRAW;
             renderMain(false,false);
             sidebar.drawRadioBtn.setSelected(true);
-
         }
     }
 
@@ -427,7 +479,7 @@ public class Controller {
 
     //region drawModeFunctions
     private void drawMousePress(MouseEvent e){
-        if(lineList.size() ==1){
+        if(lineList.size() ==1 && currentMode == Mode.DRAW ){
             startPoint = lineList.getLast().getP2();
         }
         else
@@ -439,7 +491,7 @@ public class Controller {
 
         currentPoint = startPoint;
 
-        renderMain(true,false);
+        renderMain(currentMode == Mode.DRAW,false);
         drawModePreview();
     }
 
@@ -454,7 +506,10 @@ public class Controller {
         }
 
 
-        if(lineList.size() > 2){
+        if(currentMode == Mode.DRAWFREE){
+            freeLineList.add(new Line(startPoint,getPoint(e), lineColor));
+        }
+        else if(lineList.size() > 2){
             Line closest = getClosestLine(getPoint(e));
             lineList.add(new Line(closest.getP1(),currentPoint, lineColor));
             lineList.add(new Line(currentPoint,closest.getP2(), lineColor));
@@ -477,7 +532,7 @@ public class Controller {
     private void drawMouseDrag(MouseEvent e){
 
         currentPoint = getPoint(e);
-        renderMain(true,false);
+        renderMain(currentMode == Mode.DRAW,false);
         drawModePreview();
     }
 
@@ -487,7 +542,7 @@ public class Controller {
 
     private void editMousePress(MouseEvent e){
 
-        if(lineList.isEmpty())
+        if(lineList.isEmpty() && freeLineList.isEmpty())
             return;
 
         editSelected = getClosestPointInRange(getPoint(e),5);
@@ -509,7 +564,7 @@ public class Controller {
 
     private void editMouseDrag(MouseEvent e){
 
-        if(lineList.isEmpty())
+        if(lineList.isEmpty() && freeLineList.isEmpty())
             return;
         if(editSelected == null) return;
 
@@ -534,7 +589,7 @@ public class Controller {
         private void deleteMousePress(MouseEvent e)
         {
 
-            if(lineList.isEmpty())
+            if(lineList.isEmpty() &&  freeLineList.isEmpty())
                 return;
 
             Point toDel = getClosestPointInRange(getPoint(e),5);
@@ -547,7 +602,17 @@ public class Controller {
 
 
             if(toMerge.size() == 1){
-                lineList.remove(toMerge.getFirst());
+                int ind = lineList.indexOf(toMerge.getFirst());
+
+                if(ind == -1){
+                    ind = freeLineList.indexOf(toMerge.getFirst());
+                    if(ind != -1) freeLineList.remove(ind);
+                }
+                else {
+                    lineList.remove(ind);
+                }
+
+
             }
             else if(toMerge.size() == 2){
                 List<Point> edgs = getEdgePoints(toMerge,toDel);
@@ -634,6 +699,88 @@ public class Controller {
             polygonList.set(index,polygonCropper.cropPolygon(polygonList.get(index),cutPolygon));
         }
 
+        public void lineCropMousePress( MouseEvent e){
+
+            selectedCropPoint = getClosestPointInRange(getPoint(e),5);
+
+
+            if(selectedCropPoint == null) return;
+            System.out.println(selectedCropPoint);
+            renderMain();
+
+
+
+        }
+
+        public void lineCropMouseRelease(MouseEvent e){
+            selectedCropPoint = null;
+            renderMain();
+        }
+
+        public void lineCropMouseDrag(MouseEvent e){
+            if(selectedCropPoint == null) return;
+
+
+            if(e.getX() < 0 || e.getX() > canvas.getWidth() || e.getY() < 0 || e.getY() > canvas.getHeight() )
+            {
+                renderMain(false,true);
+                return;
+            }
+
+
+
+            int x = e.getX();
+            int y =e.getY();
+
+
+
+            List<Line> com = getLinesByCommonPoint(selectedCropPoint);
+            if(com.size() != 2) return;
+            Point sharedX = null;
+            Point sharedY = null;
+            for(Line l : com){
+
+
+
+
+                if(l.getP1() == selectedCropPoint){
+                    if(l.getP2().getY() == selectedCropPoint.getY()){
+                        sharedY = l.getP2();
+                    }
+                    else if(l.getP2().getX() == selectedCropPoint.getX()){
+                        sharedX = l.getP2();
+                    }
+                }
+                else
+                {
+                    if(l.getP1().getY() == selectedCropPoint.getY()){
+                        sharedY = l.getP1();
+                    }
+                    else if(l.getP1().getX() == selectedCropPoint.getX()){
+                        sharedX = l.getP1();
+                    }
+                }
+            }
+
+            if(sharedX == null || sharedY == null) return;
+
+            if(getLenght(selectedCropPoint, new Point(x,sharedX.getY())) < 10) return;
+            if(getLenght(selectedCropPoint, new Point(sharedY.getX(),y)) < 10) return;
+
+
+            selectedCropPoint.setX(x);
+            sharedX.setX(x);
+            sharedY.setY(y);
+            selectedCropPoint.setY(y);
+            System.out.println(selectedCropPoint);
+
+
+            renderMain(false,false);
+
+
+
+        }
+
     //endregion
 
 
@@ -645,10 +792,26 @@ public class Controller {
         sidebar.seedFillBtn.setText("Seed Fill");
     }
 
+    public double getLenght(Point p1, Point p2){
+        int dx = p2.getX() - p1.getX();
+        int dy = p2.getY() - p1.getY();
+
+        return Math.sqrt(dx*dx+dy*dy);
+    }
+
 
     private List<Line> getLinesByCommonPoint(Point com){
 
-        return lineList.stream().filter(x -> x.getP1() == com || x.getP2() == com).toList();
+        List<Line> allLines = new ArrayList<>();
+        if(currentMode == Mode.LINECROP){
+            allLines = lineCropPolygon.getLines();
+        }
+        else {
+            allLines.addAll(lineList);
+            allLines.addAll(freeLineList);
+        }
+
+        return allLines.stream().filter(x -> x.getP1().pointsEqual(com) || x.getP2().pointsEqual(com)).toList();
     }
 
     private List<Point> getEdgePoints(List<Line> lins, Point mid){
@@ -704,7 +867,17 @@ public class Controller {
         double dist = -1;
         Point closest = null;
 
-        for (Line l : selectedPolygon.getLines()){
+        List<Line> allLines = new ArrayList<>();
+        if(currentMode == Mode.LINECROP){
+            allLines = lineCropPolygon.getLines();
+        }
+        else {
+            allLines.addAll(lineList);
+            allLines.addAll(freeLineList);
+        }
+
+
+        for (Line l : allLines){
             double p1D = l.getP1().pointDistance(at);
             double p2D = l.getP2().pointDistance(at);
 
@@ -727,6 +900,20 @@ public class Controller {
         return closest;
     }
 
+    private void initLineCropper(){
+        int e = canvas.getWidth()-100;
+        Point p1 = new Point(100,100);
+        Point p2 = new Point(e,100);
+        Point p3 = new Point(100,500);
+        Point p4 =new Point(e,500);
+
+        lineCropPolygon.Lines.add(new Line(p1,p2,0xFF0000));
+        lineCropPolygon.Lines.add(new Line(p3,p1,0xFF0000));
+        lineCropPolygon.Lines.add(new Line(p2,p4,0xFF0000));
+        lineCropPolygon.Lines.add(new Line(p4,p3,0xFF0000));
+
+    }
+
     //endregion
 
     //region render
@@ -746,26 +933,38 @@ public class Controller {
         canvas.clear();
 
 
-        renderGrid();
+        if(currentMode == Mode.LINECROP){
+            renderCropWindow();
+        }
+        else
+        {
+            renderGrid();
+        }
+
+
         renderPolygons();
-
-
+        renderLines();
 
 
         if(mids) renderMids();
         if(points) renderPoints();
 
-
-
-
-
-
-
-
         canvas.repaint();
 
+    }
 
+    private void renderCropWindow(){
+        polygonRasterizer.rasterize(lineCropPolygon);
+        for(Line l: lineCropPolygon.getLines()){
+            Point p = l.getP1();
+            drawPoint(p.getX(),p.getY(),0x0000FF);
+        }
+    }
 
+    private void renderLines(){
+        for(Line l: freeLineList){
+            lineRasterizer.rasterize(l);
+        }
     }
 
 
@@ -815,7 +1014,7 @@ public class Controller {
     private void drawModePreview(){
 
 
-        if(lineList.isEmpty()){
+        if(lineList.isEmpty() || currentMode == Mode.DRAWFREE){
             previewRender(startPoint,currentPoint);
 
         }
@@ -863,6 +1062,22 @@ public class Controller {
 
     }
 
+    private void drawPoint(int x, int y, int clr){
+        for(int i = -2; i < 3; i++){
+            for(int j = -2; j < 3; j++){
+
+                int xmx =x+i;
+                int ymy = y+j;
+
+                if(xmx < 0 || xmx > canvas.getWidth() || ymy<0 || y > canvas.getHeight()){
+                    continue;
+                }
+
+
+                canvas.getRaster().setPixel(xmx, ymy,0x0000FF );
+            }
+        }
+    }
 
 
     private void renderMids(){
@@ -870,57 +1085,40 @@ public class Controller {
 
 
             Point mid = l.getMid();
-            for(int i = -2; i < 3; i++){
-                for(int j = -2; j < 3; j++){
-
-                    int xmx =mid.getX()+i;
-                    int ymy = mid.getY()+j;
-
-
-                    canvas.getRaster().setPixel(xmx, ymy,0x0000FF );
-                }
-            }
-
+            drawPoint(mid.getX(), mid.getY(),0x0000FF  );
 
         }
+
+        for(Line l: freeLineList){
+            Point mid = l.getMid();
+            drawPoint(mid.getX(), mid.getY(),0x0000FF  );
+        }
     }
+
+
 
     private void renderPoints(){
 
         float b = 0.1f;
         for(Line l:lineList){
 
-//TODO : currently uses progressivly brighter to indicate orientation, change back to static
 
-
-
-            for(int i = -2; i < 3; i++){
-                for(int j = -2; j < 3; j++){
-
-                    int x1 =l.getP1().getX()+i;
-                    int y1 = l.getP1().getY()+j;
-                    Color c =  new Color(0,0,b);
-
-                    canvas.getRaster().setPixel(x1, y1, c.getRGB() );
-
-
-
-                    if(lineList.size() == 1){
-                        int x2 =l.getP2().getX()+i;
-                        int y2 = l.getP2().getY()+j;
-
-                        canvas.getRaster().setPixel(x2, y2,0x0000FF );
-                    }
-
-
-                }
-            }
+            Color c =  new Color(0,0,b);
+            drawPoint(l.getP1().getX(),l.getP1().getY(),c.getRGB());
             b += 0.2f;
 
             if(b > 1) b =1f;
 
 
+        }
+        if(lineList.size() <3 && !lineList.isEmpty()){
+            Point p = lineList.getLast().getP2();
+            drawPoint(p.getX(),p.getY(),0x0000FF  );
+        }
 
+        for(Line l: freeLineList){
+            drawPoint(l.getP1().getX(),l.getP1().getY(),0x0000FF  );
+            drawPoint(l.getP2().getX(),l.getP2().getY(),0x0000FF  );
         }
     }
 

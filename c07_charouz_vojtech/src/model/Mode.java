@@ -2,7 +2,9 @@ package model;
 
 public enum Mode {
     EDIT,
+    DRAWFREE,
     DRAW,
     DELETE,
-    SEEDFILL
+    SEEDFILL,
+    LINECROP,
 }

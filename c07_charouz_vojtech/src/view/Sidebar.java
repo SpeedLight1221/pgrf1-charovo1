@@ -17,6 +17,7 @@ public class Sidebar extends JPanel {
     public JRadioButton editRadioBtn;
     public JRadioButton drawRadioBtn;
     public JRadioButton deleteRadioBtn;
+    public JRadioButton freeDrawRadioBtn;
     public JButton lineColorPickBtn;
     public JPanel lineColorRect;
     public JButton applyToAllBtn;
@@ -28,6 +29,7 @@ public class Sidebar extends JPanel {
     public JButton seedFillBtn;
     public JButton scanLineFillBtn;
     public JButton removeFillBtn;
+    public JButton lineCropBtn;
 
 
     public void populateSidebar(){
@@ -45,7 +47,7 @@ public class Sidebar extends JPanel {
         add(editRadioBtn,gbc);
 
         drawRadioBtn = new JRadioButton();
-        drawRadioBtn.setText("Draw");
+        drawRadioBtn.setText("Poly");
         styleBtn(drawRadioBtn);
         gbc.gridx = 2;
         gbc.gridy = 0;
@@ -60,10 +62,17 @@ public class Sidebar extends JPanel {
 
         add(deleteRadioBtn,gbc);
 
+        freeDrawRadioBtn = new JRadioButton();
+        freeDrawRadioBtn.setText("Line");
+        styleBtn(freeDrawRadioBtn);
+        gbc.gridx=2;
+        add(freeDrawRadioBtn,gbc);
+
         ButtonGroup modeBtns = new ButtonGroup();
         modeBtns.add(editRadioBtn);
         modeBtns.add(drawRadioBtn);
         modeBtns.add(deleteRadioBtn);
+        modeBtns.add(freeDrawRadioBtn);
 
         JSeparator hl1 = new JSeparator();
         gbc.gridy=2;
@@ -178,10 +187,25 @@ public class Sidebar extends JPanel {
 
         removeFillBtn = new JButton();
         removeFillBtn.setText("Clear Fill");
-        gbc.weighty =1;
+
         gbc.gridy = 12;
-        gbc.insets = new Insets(5,0,10,0);
+        gbc.insets = new Insets(5,0,5,0);
         add(removeFillBtn,gbc);
+
+        JSeparator hl4 = new JSeparator();
+        gbc.insets = new Insets(10,0,10,0);
+        gbc.gridy = 13;
+        gbc.gridx =0;
+        gbc.gridwidth =4;
+        add(hl4,gbc);
+
+
+        lineCropBtn = new JButton();
+        lineCropBtn.setText("Crop Lines");
+        gbc.weighty =1;
+        gbc.gridy = 14;
+        gbc.insets = new Insets(0,0,5,0);
+        add(lineCropBtn,gbc);
 
 
 
