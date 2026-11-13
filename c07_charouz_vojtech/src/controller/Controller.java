@@ -43,10 +43,10 @@ public class Controller {
     private int fillColor = 0xFF0000;
 
 
-    private final Canvas canvas;
+    public final Canvas canvas;
     private final Sidebar sidebar;
     private final Window window;
-    private final LineRasterizer lineRasterizer;
+    public final LineRasterizer lineRasterizer;
     private final PolygonRasterizer polygonRasterizer;
 
     private Polygon cutPolygon;
@@ -65,6 +65,8 @@ public class Controller {
 
     private PolygonCropper polygonCropper;
 
+    public static Controller mainControl;
+
 
 
 
@@ -73,6 +75,7 @@ public class Controller {
 
     public Controller(Window window,Canvas canvas, Sidebar sidebar) {
 
+        mainControl = this;
         this.canvas = canvas;
         this.sidebar = sidebar;
         this.window = window;
@@ -376,7 +379,8 @@ public class Controller {
     private final Action keyPressedO = new AbstractAction() {
         @Override
         public void actionPerformed(ActionEvent e) {
-            cropCurrent();
+            crop(1);
+            renderMain();
         }
     };
 
@@ -624,6 +628,12 @@ public class Controller {
             renderMain();
         }
 
+        public void crop(int index){
+            if(polygonList.get(index) == cutPolygon) return;
+
+            polygonList.set(index,polygonCropper.cropPolygon(polygonList.get(index),cutPolygon));
+        }
+
     //endregion
 
 
@@ -721,7 +731,7 @@ public class Controller {
 
     //region render
 
-    private void renderMain(){
+    public void renderMain(){
         if(currentMode == Mode.EDIT || currentMode == Mode.DELETE){
             renderMain(false,true);
         }
@@ -731,11 +741,15 @@ public class Controller {
         }
     }
 
-    private void renderMain(boolean mids, boolean points){
+
+    public void renderMain(boolean mids, boolean points){
         canvas.clear();
 
 
+        renderGrid();
         renderPolygons();
+
+
 
 
         if(mids) renderMids();
@@ -746,8 +760,31 @@ public class Controller {
 
 
 
+
+
         canvas.repaint();
 
+
+
+    }
+
+
+
+    private void renderGrid(){
+        List<Line> gl = new ArrayList<>();
+
+        final int gcolor = 0x474747;
+        for(int i = 1; i <8; i++){
+            gl.add(new Line(new Point(i*100,0),new Point(i*100,600),gcolor));
+        }
+
+        for(int j = 1; j < 6; j++){
+            gl.add(new Line(new Point(0,j*100),new Point(800,j*100),gcolor));
+        }
+
+        for(Line l : gl){
+            lineRasterizer.rasterize(l);
+        }
 
 
     }

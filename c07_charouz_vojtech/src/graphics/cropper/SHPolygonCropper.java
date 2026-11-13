@@ -12,6 +12,7 @@ public class SHPolygonCropper implements PolygonCropper {
     @Override
     public Polygon cropPolygon(Polygon toCrop, Polygon cropBy) {
 
+        Polygon.OrderPolygon(toCrop);
         boolean isClockwise = cropBy.isClockWise();
 
         Polygon result = new Polygon((toCrop.getLines()));
@@ -25,11 +26,15 @@ public class SHPolygonCropper implements PolygonCropper {
             Point cA = cl.getP1();
             Point cB = cl.getP2();
 
+
+
+
             current = new ArrayList<>(result.getLines());
             result.Lines.clear();
 
 //todo certain polygons end up "webbed" also once had a nulllptr exeption, not yet reproduced though
             for(Line l: current){
+
 
                 double prod1 = Point.crossProduct(cA,cB,l.getP1());
                 double prod2 = Point.crossProduct(cA,cB,l.getP2());
@@ -93,8 +98,13 @@ public class SHPolygonCropper implements PolygonCropper {
 
 
 
+
             }
+
+
+
             result.addMissing();
+
 
         }
         toCrop.Lines = result.Lines;
@@ -102,4 +112,80 @@ public class SHPolygonCropper implements PolygonCropper {
 
 
     }
+
+
+
+    //region unused
+    private void findIslands(Polygon res){
+
+
+        class ILine{
+            public ILine(int i, Line l){
+                Island=i;
+                line =l;
+            }
+
+            public int Island;
+            public Line line;
+        }
+
+        List<Line> Lines = res.getLines();
+
+        List<ILine> islands = new ArrayList<>();
+        int lastIs = 0;
+        boolean[] checked = new boolean[Lines.size()];
+
+        linloop:
+        for(Line l : Lines){
+            int ind = Lines.indexOf(l);
+            if (checked[ind] == true) continue;// if this line was already processed, skip
+
+            //check if it doesnt connect to an alrady existing island
+
+            for(ILine il : islands){
+                if(il.line.getP1().pointsEqual(l.getP2())){
+                    islands.add(new ILine(il.Island,l));
+                    checked[ind] = true;
+                    continue linloop;
+                }
+            }
+
+            //if not, add it to a new island and find all connecting
+
+            islands.add(new ILine(lastIs,l));
+            checked[ind] = true;
+            Line last = l;
+            while (true){
+                final Line el = last;
+                Line n = Lines.stream().filter(x-> x.getP1().pointsEqual(el.getP2())).findFirst().orElse(null);
+
+                if(n == null){
+                    break;
+                }
+
+                islands.add(new ILine(lastIs,n));
+                checked[Lines.indexOf(n)] = true;
+                last = n;
+
+                for(boolean b : checked){
+                    if(b == false){
+                        continue;
+                    }
+                }
+                break;
+
+
+
+
+
+            }
+
+
+            lastIs++;
+        }
+
+
+
+    }
+    //endregion
 }

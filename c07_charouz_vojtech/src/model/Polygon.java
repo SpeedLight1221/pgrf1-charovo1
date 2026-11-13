@@ -23,8 +23,9 @@ public class Polygon {
         return Lines;
     }
 
-    public void orderSelf(){
+    public static void OrderPolygon(Polygon p){
 
+        List<Line> Lines = p.getLines();
         if(Lines.size() < 3) return;
 
         Point next = Lines.getFirst().getP2();
@@ -40,7 +41,7 @@ public class Polygon {
     }
 
     public boolean isClockWise(){
-        orderSelf();
+        OrderPolygon(this);
 
         List<Point> points = new ArrayList<>();
 
@@ -80,7 +81,13 @@ public class Polygon {
         }
 
         Lines.addAll(toAdd);
-        orderSelf();
+        OrderPolygon(this);
+    }
+
+    public static boolean isLoopClosed(Polygon p){
+        OrderPolygon(p);
+
+        return (p.getLines().getLast().getP2().pointsEqual(p.getLines().getFirst().getP1()));
     }
 
     public int fillColor;

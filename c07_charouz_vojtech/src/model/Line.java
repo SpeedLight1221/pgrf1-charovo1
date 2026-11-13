@@ -1,5 +1,8 @@
 package model;
 
+import java.util.Collections;
+import java.util.List;
+
 public class Line {
     private Point p1;
     private Point p2;
@@ -58,4 +61,6 @@ public class Line {
     public Point getDirectionVector(){
         return  new Point(p2.getX()-p1.getX(), p2.getY()-p1.getY());
     }
+
+
 }
