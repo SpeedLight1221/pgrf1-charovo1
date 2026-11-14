@@ -45,8 +45,12 @@ public class Line {
     }
 
     public static int YInterpolation(int Y, Line toCheck){
-        if(toCheck.p2.getY() > Y && toCheck.p1.getY() > 1) return -1;
-        if(toCheck.p2.getY() < Y && toCheck.p1.getY() < 1) return -1;
+        if(toCheck.p2.getY() > Y && toCheck.p1.getY() > Y) return -1;
+        if(toCheck.p2.getY() < Y && toCheck.p1.getY() < Y) return -1;
+
+        if(toCheck.p1.getY() == toCheck.p2.getY()){
+            return -1;
+        }
 
         Y += 0.5;
 
@@ -58,11 +62,31 @@ public class Line {
 
     }
 
+    public static int XInterpolation(int X, Line toCheck){
+        if(toCheck.p2.getX() > X && toCheck.p1.getX() > X) return -1;
+        if(toCheck.p2.getX() < X && toCheck.p1.getX() < X) return -1;
+
+        if(toCheck.p1.getX() == toCheck.p2.getX()){
+            return -1;
+        }
+
+        double y = toCheck.p1.getY() + (X- toCheck.p1.getX()) * (toCheck.p2.getY() - toCheck.p1.getY()) / (toCheck.p2.getX()-toCheck.p1.getX());
+
+        int rsy = (int)Math.ceil(y-0.5);
+
+        return rsy;
+
+    }
+
     public Point getDirectionVector(){
         return  new Point(p2.getX()-p1.getX(), p2.getY()-p1.getY());
     }
 
 
+    @Override
+    public String toString() {
+        return  p1.toString() + " ----> " + p2.toString();
+    }
 
 
 }

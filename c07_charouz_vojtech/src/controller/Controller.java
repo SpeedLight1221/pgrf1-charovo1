@@ -1,5 +1,7 @@
 package controller;
 
+import graphics.cropper.CSLineCropper;
+import graphics.cropper.LineCropper;
 import graphics.cropper.PolygonCropper;
 import graphics.cropper.SHPolygonCropper;
 import graphics.filler.*;
@@ -36,8 +38,24 @@ public class Controller {
     private Point startPoint;
     private Point currentPoint;
     private Point editSelected;
+
     List<Line> lineList;
     List<Line> freeLineList;
+    final List<Polygon> polygonList;
+
+    private Polygon selectedPolygon;
+    private Polygon cutPolygon;
+    private Polygon lineCropPolygon;
+
+    public final LineRasterizer lineRasterizer;
+    private final PolygonRasterizer polygonRasterizer;
+    private Point seedFillPoint;
+    private SeedFiller seedFiller;
+    private PolygonFiller polygonFiller;
+
+    private PolygonCropper polygonCropper;
+    private Point selectedCropPoint;
+    private LineCropper lineCropper;
 
     private int lineColor = 0x00FF00;
     private static final int PREVIEW_COLOR = 0xFF0000;
@@ -47,24 +65,15 @@ public class Controller {
     public final Canvas canvas;
     private final Sidebar sidebar;
     private final Window window;
-    public final LineRasterizer lineRasterizer;
-    private final PolygonRasterizer polygonRasterizer;
 
-    private Polygon cutPolygon;
-    private Polygon lineCropPolygon;
-
-    private Polygon selectedPolygon;
-    private final List<Polygon> polygonList;
     private int polyIdCounter =1;
-
     public Mode currentMode;
 
-    private Point seedFillPoint;
-    private SeedFiller seedFiller;
-    private PolygonFiller polygonFiller;
 
-    private PolygonCropper polygonCropper;
-    private Point selectedCropPoint;
+
+
+
+
 
     public static Controller mainControl;
 
@@ -100,6 +109,7 @@ public class Controller {
         seedFiller = new StackSeedFiller(canvas.getRaster());
         polygonFiller = new ScanlineFiller(canvas.getRaster());
         polygonCropper = new SHPolygonCropper();
+        lineCropper = new CSLineCropper();
 
         lineCropPolygon = new Polygon();
         initLineCropper();
@@ -146,7 +156,7 @@ public class Controller {
            public void mousePressed(MouseEvent e) {
                super.mousePressed(e);
 
-               System.out.println(e.getX() + "//" + e.getY());
+
 
 
                if(currentMode == Mode.DRAW || currentMode == Mode.DRAWFREE){
@@ -215,23 +225,28 @@ public class Controller {
 
         sidebar.drawRadioBtn.addActionListener(e -> {
             currentMode = Mode.DRAW;
+            sidebar.lineCropBtn.setText("Line Crop");
             renderMain(false,false);
         });
 
         sidebar.editRadioBtn.addActionListener(e -> {
             currentMode = Mode.EDIT;
+            sidebar.lineCropBtn.setText("Line Crop");
             renderMain(false,true);
 
         });
 
         sidebar.deleteRadioBtn.addActionListener(e -> {
             currentMode = Mode.DELETE;
+            sidebar.lineCropBtn.setText("Line Crop");
             renderMain(false,true);
 
         });
 
         sidebar.freeDrawRadioBtn.addActionListener(e->{
             currentMode = Mode.DRAWFREE;
+
+
             renderMain(false,false);
         });
 
@@ -375,7 +390,8 @@ public class Controller {
 
         sidebar.lineCropBtn.addActionListener(e ->{
             if(currentMode == Mode.LINECROP){
-                // crop
+
+                freeLineList = lineCropper.cropLines(freeLineList,lineCropPolygon);
                 switchMode();
                 sidebar.lineCropBtn.setText("Line Crop");
             }
@@ -470,6 +486,7 @@ public class Controller {
         for(Polygon p : polygonList){
             p.Lines.clear();
         }
+        freeLineList.clear();
         canvas.clear();
         canvas.repaint();
     }
@@ -487,6 +504,8 @@ public class Controller {
             startPoint = getPoint(e);
         }
 
+        System.out.println(currentMode);
+
 
 
         currentPoint = startPoint;
@@ -497,6 +516,8 @@ public class Controller {
 
 
     private void drawMouseRelease(MouseEvent e){
+
+        System.out.println(currentMode);
         if(e.getX() < 0 || e.getX() > canvas.getWidth() || e.getY() < 0 || e.getY() > canvas.getHeight() )
         {
             startPoint = null;
@@ -531,6 +552,7 @@ public class Controller {
 
     private void drawMouseDrag(MouseEvent e){
 
+        System.out.println(currentMode);
         currentPoint = getPoint(e);
         renderMain(currentMode == Mode.DRAW,false);
         drawModePreview();
@@ -705,7 +727,7 @@ public class Controller {
 
 
             if(selectedCropPoint == null) return;
-            System.out.println(selectedCropPoint);
+
             renderMain();
 
 
@@ -772,7 +794,7 @@ public class Controller {
             sharedX.setX(x);
             sharedY.setY(y);
             selectedCropPoint.setY(y);
-            System.out.println(selectedCropPoint);
+
 
 
             renderMain(false,false);
