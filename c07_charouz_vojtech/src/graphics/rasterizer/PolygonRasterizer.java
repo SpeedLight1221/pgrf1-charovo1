@@ -4,7 +4,7 @@ import model.Polygon;
 
 public interface PolygonRasterizer {
 
-   void rasterize(Polygon polygon);
+    void rasterize(Polygon polygon);
 
 
 }

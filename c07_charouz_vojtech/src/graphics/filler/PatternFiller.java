@@ -4,5 +4,5 @@ import graphics.Raster;
 import model.Polygon;
 
 public interface PatternFiller {
-    public void fill(Polygon toFill, Raster pattern);
+    void fill(Polygon toFill, Raster pattern);
 }

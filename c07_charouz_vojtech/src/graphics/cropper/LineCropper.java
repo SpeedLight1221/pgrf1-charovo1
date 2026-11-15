@@ -6,5 +6,5 @@ import model.Polygon;
 import java.util.List;
 
 public interface LineCropper {
-    public List<Line> cropLines(List<Line> toCrop, Polygon cropBy);
+    List<Line> cropLines(List<Line> toCrop, Polygon cropBy);
 }

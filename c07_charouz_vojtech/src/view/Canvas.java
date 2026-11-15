@@ -2,12 +2,9 @@ package view;
 
 import graphics.RasterImage;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.image.BufferedImage;
-
-import javax.swing.JPanel;
 
 /**
  * Represents a raster drawing surface based on a Swing {@link JPanel}.
@@ -31,12 +28,12 @@ public class Canvas extends JPanel {
         return height;
     }
 
-    public Color getBackgroundColor(){
+    public Color getBackgroundColor() {
         return BACKGROUND_COLOR;
     }
 
-    protected  int width;
-    protected  int height;
+    protected int width;
+    protected int height;
 
 
     private static final Color BACKGROUND_COLOR = new Color(0x2F2F2F);
@@ -47,7 +44,7 @@ public class Canvas extends JPanel {
         setPreferredSize(new Dimension(width, height));
         this.width = width;
         this.height = height;
-        image = new RasterImage(width,height);
+        image = new RasterImage(width, height);
         clear();
     }
 
@@ -55,9 +52,8 @@ public class Canvas extends JPanel {
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Rendering -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
 
-
     public void clear() {
-       image.clear(BACKGROUND_COLOR.getRGB());
+        image.clear(BACKGROUND_COLOR.getRGB());
     }
 
     /**

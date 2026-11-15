@@ -9,7 +9,7 @@ public class PolygonOutlineRasterizer implements PolygonRasterizer {
 
     private final LineRasterizer lRast;
 
-    public PolygonOutlineRasterizer(LineRasterizer lr){
+    public PolygonOutlineRasterizer(LineRasterizer lr) {
         lRast = lr;
     }
 
@@ -17,21 +17,18 @@ public class PolygonOutlineRasterizer implements PolygonRasterizer {
     public void rasterize(Polygon polygon) {
 
 
-
         List<Line> ls = polygon.getLines();
 
-        if(ls.size() == 2)
-        {
+        if (ls.size() == 2) {
             Line l1 = ls.getFirst();
-            Line l2 =ls.getLast();
+            Line l2 = ls.getLast();
 
-            ls.add(new Line(l2.getP2(),l1.getP1(),l2.getColor()));
+            ls.add(new Line(l2.getP2(), l1.getP1(), l2.getColor()));
         }
 
 
-        for(Line l : ls)
-        {
-            if(polygon.lineOverrideColor != -1){
+        for (Line l : ls) {
+            if (polygon.lineOverrideColor != -1) {
                 l.setColor(polygon.lineOverrideColor);
             }
             lRast.rasterize(l);

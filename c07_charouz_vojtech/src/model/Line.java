@@ -1,8 +1,5 @@
 package model;
 
-import java.util.Collections;
-import java.util.List;
-
 public class Line {
     private Point p1;
     private Point p2;
@@ -14,7 +11,7 @@ public class Line {
         Color = color;
     }
 
-    public void setColor(int color){
+    public void setColor(int color) {
         Color = color;
     }
 
@@ -30,62 +27,61 @@ public class Line {
         return Color;
     }
 
-    public Point getMid(){
-        int mX = (p1.getX()+p2.getX())/2;
-        int mY = (p1.getY()+p2.getY())/2;
+    public Point getMid() {
+        int mX = (p1.getX() + p2.getX()) / 2;
+        int mY = (p1.getY() + p2.getY()) / 2;
 
-        return  new Point(mX,mY);
+        return new Point(mX, mY);
     }
 
-    public void swapPoints()
-    {
+    public void swapPoints() {
         Point p = p1;
         p1 = p2;
         p2 = p;
     }
 
-    public static int YInterpolation(int Y, Line toCheck){
-        if(toCheck.p2.getY() > Y && toCheck.p1.getY() > Y) return -1;
-        if(toCheck.p2.getY() < Y && toCheck.p1.getY() < Y) return -1;
+    public static int YInterpolation(int Y, Line toCheck) {
+        if (toCheck.p2.getY() > Y && toCheck.p1.getY() > Y) return -1;
+        if (toCheck.p2.getY() < Y && toCheck.p1.getY() < Y) return -1;
 
-        if(toCheck.p1.getY() == toCheck.p2.getY()){
+        if (toCheck.p1.getY() == toCheck.p2.getY()) {
             return -1;
         }
 
         Y += 0.5;
 
-        double x = toCheck.p1.getX() + (Y- toCheck.p1.getY()) * (toCheck.p2.getX() - toCheck.p1.getX()) / (toCheck.p2.getY()-toCheck.p1.getY());
+        double x = toCheck.p1.getX() + (Y - toCheck.p1.getY()) * (toCheck.p2.getX() - toCheck.p1.getX()) / (toCheck.p2.getY() - toCheck.p1.getY());
 
-        int rsx = (int)Math.ceil(x-0.5);
+        int rsx = (int) Math.ceil(x - 0.5);
 
         return rsx;
 
     }
 
-    public static int XInterpolation(int X, Line toCheck){
-        if(toCheck.p2.getX() > X && toCheck.p1.getX() > X) return -1;
-        if(toCheck.p2.getX() < X && toCheck.p1.getX() < X) return -1;
+    public static int XInterpolation(int X, Line toCheck) {
+        if (toCheck.p2.getX() > X && toCheck.p1.getX() > X) return -1;
+        if (toCheck.p2.getX() < X && toCheck.p1.getX() < X) return -1;
 
-        if(toCheck.p1.getX() == toCheck.p2.getX()){
+        if (toCheck.p1.getX() == toCheck.p2.getX()) {
             return -1;
         }
 
-        double y = toCheck.p1.getY() + (X- toCheck.p1.getX()) * (toCheck.p2.getY() - toCheck.p1.getY()) / (toCheck.p2.getX()-toCheck.p1.getX());
+        double y = toCheck.p1.getY() + (X - toCheck.p1.getX()) * (toCheck.p2.getY() - toCheck.p1.getY()) / (toCheck.p2.getX() - toCheck.p1.getX());
 
-        int rsy = (int)Math.ceil(y-0.5);
+        int rsy = (int) Math.ceil(y - 0.5);
 
         return rsy;
 
     }
 
-    public Point getDirectionVector(){
-        return  new Point(p2.getX()-p1.getX(), p2.getY()-p1.getY());
+    public Point getDirectionVector() {
+        return new Point(p2.getX() - p1.getX(), p2.getY() - p1.getY());
     }
 
 
     @Override
     public String toString() {
-        return  p1.toString() + " ----> " + p2.toString();
+        return p1.toString() + " ----> " + p2.toString();
     }
 
 

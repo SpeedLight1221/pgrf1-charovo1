@@ -2,8 +2,6 @@ package view;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 
 /**
  * Represents the main application window that displays the {@link Canvas}.
@@ -17,7 +15,6 @@ public class Window extends JFrame {
     private final Canvas canvas;
 
 
-
     private final Sidebar sidebar;
 
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Constructors -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
@@ -28,23 +25,20 @@ public class Window extends JFrame {
         setLayout(new BorderLayout());
         setResizable(false);
 
-        canvas = new Canvas((width/6)*5, height);
+        canvas = new Canvas((width / 6) * 5, height);
         add(canvas);
 
-        sidebar = new Sidebar(width/6,height);
-        add(sidebar,BorderLayout.EAST);
+        sidebar = new Sidebar(width / 6, height);
+        add(sidebar, BorderLayout.EAST);
 
 
         pack();
-
 
 
         setLocationRelativeTo(null);
         canvas.setFocusable(true);
         canvas.grabFocus();
         setVisible(true);
-
-
 
 
     }
@@ -54,10 +48,10 @@ public class Window extends JFrame {
     public Canvas getCanvas() {
         return canvas;
     }
+
     public Sidebar getSidebar() {
         return sidebar;
     }
-
 
 
 }
