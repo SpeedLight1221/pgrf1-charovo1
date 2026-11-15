@@ -72,7 +72,7 @@ public class Controller {
     private int polyIdCounter =1;
     public Mode currentMode;
 
-
+    private boolean shiftDown = false;
 
 
 
@@ -146,6 +146,12 @@ public class Controller {
 
         IM.put(KeyStroke.getKeyStroke("O"),"pressedO");
         AM.put("pressedO",keyPressedO);
+
+        IM.put(KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, InputEvent.SHIFT_DOWN_MASK,false),"pressedShift");
+        AM.put("pressedShift", keyPressedShift);
+
+        IM.put(KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, 0,true),"releasedShift");
+        AM.put("releasedShift", keyReleasedShift);
 
 
 
@@ -445,6 +451,22 @@ public class Controller {
         }
     };
 
+    private final Action keyReleasedShift = new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+
+            shiftDown = false;
+        }
+    };
+
+    private final Action keyPressedShift = new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+
+            shiftDown = true;
+        }
+    };
+
 
 
 
@@ -514,7 +536,6 @@ public class Controller {
 
     private void drawMouseRelease(MouseEvent e){
 
-        System.out.println(currentMode);
         if(e.getX() < 0 || e.getX() > canvas.getWidth() || e.getY() < 0 || e.getY() > canvas.getHeight() )
         {
             startPoint = null;
@@ -525,7 +546,7 @@ public class Controller {
 
 
         if(currentMode == Mode.DRAWFREE){
-            freeLineList.add(new Line(startPoint,getPoint(e), lineColor));
+            freeLineList.add(new Line(startPoint,currentPoint, lineColor));
         }
         else if(lineList.size() > 2){
             Line closest = getClosestLine(getPoint(e));
@@ -535,7 +556,7 @@ public class Controller {
         }
         else
         {
-            lineList.add(new Line(startPoint,getPoint(e), lineColor));
+            lineList.add(new Line(startPoint,currentPoint, lineColor));
         }
 
 
@@ -550,7 +571,15 @@ public class Controller {
     private void drawMouseDrag(MouseEvent e){
 
         System.out.println(currentMode);
-        currentPoint = getPoint(e);
+        if(shiftDown == false || currentMode != Mode.DRAWFREE){
+            currentPoint = getPoint(e);
+        }
+        else
+        {
+            currentPoint = getLockedPoint(getPoint(e));
+        }
+
+
         renderMain(currentMode == Mode.DRAW,false);
         drawModePreview();
     }
@@ -701,7 +730,6 @@ public class Controller {
 
     //endregion
 
-
     //region cropFunctions
         public void cropCurrent(){
             if(selectedPolygon == cutPolygon) return;
@@ -804,6 +832,45 @@ public class Controller {
 
 
     //region utils
+
+    private Point getLockedPoint(Point p){
+        int dx = p.getX() - startPoint.getX();
+        int dy = p.getY() - startPoint.getY();
+
+        if(Math.abs(dx) > Math.abs(dy)){//closer to the X axis then the Y Axis
+
+            if(Math.abs(dy)*2 < Math.abs(dx))// closer to main axis
+            {
+                return new Point(p.getX(),startPoint.getY());
+            }
+            else// closer to diagonal
+            {
+                int dd = Math.abs(dx) - Math.abs(dy);
+                return new Point(p.getX(), p.getY()+(dd*(int)Math.signum(dy)));
+            }
+
+
+
+
+
+        }
+        else {
+            if(Math.abs(dx)*2 < Math.abs(dy))// closer to main axis
+            {
+                return new Point(startPoint.getX(), p.getY());
+            }
+            else// closer to diagonal
+            {
+                int dd = Math.abs(dy) - Math.abs(dx);
+                return new Point(p.getX()+(dd*(int)Math.signum(dx)), p.getY());
+            }
+
+        }
+
+
+    }
+
+
 
     private void disableSeedFill(){
         currentMode = Mode.DRAW;
