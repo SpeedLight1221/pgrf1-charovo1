@@ -19,7 +19,7 @@ import javax.swing.JPanel;
  */
 public class Canvas extends JPanel {
 
-    private final RasterImage image;
+    protected RasterImage image;
 
     @Override
     public int getWidth() {
@@ -35,8 +35,9 @@ public class Canvas extends JPanel {
         return BACKGROUND_COLOR;
     }
 
-    private final int width;
-    private final int height;
+    protected  int width;
+    protected  int height;
+
 
     private static final Color BACKGROUND_COLOR = new Color(0x2F2F2F);
 
@@ -49,6 +50,7 @@ public class Canvas extends JPanel {
         image = new RasterImage(width,height);
         clear();
     }
+
 
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Rendering -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 

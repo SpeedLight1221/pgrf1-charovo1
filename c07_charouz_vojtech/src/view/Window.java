@@ -39,8 +39,6 @@ public class Window extends JFrame {
 
 
 
-
-
         setLocationRelativeTo(null);
         canvas.setFocusable(true);
         canvas.grabFocus();

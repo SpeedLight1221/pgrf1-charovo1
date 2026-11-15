@@ -1,5 +1,7 @@
 package controller;
 
+import graphics.Raster;
+import graphics.RasterImage;
 import graphics.cropper.CSLineCropper;
 import graphics.cropper.LineCropper;
 import graphics.cropper.PolygonCropper;
@@ -13,6 +15,7 @@ import model.*;
 import model.Point;
 import model.Polygon;
 import view.Canvas;
+import view.PatternDialog;
 import view.Sidebar;
 import view.Window;
 
@@ -428,14 +431,8 @@ public class Controller {
     private final Action keyPressedT = new AbstractAction() {
         @Override
         public void actionPerformed(ActionEvent e) {
-            for(Line l : polygonList.get(1).getLines()){
-                System.out.println(l.getP1() + " ----> " + l.getP2());
-            }
-            System.out.println(cutPolygon.isClockWise());
-            System.out.println("------------");
+            Raster r = PatternDialog.showDialog();
 
-
-            renderMain(false,true);
         }
     };
 
