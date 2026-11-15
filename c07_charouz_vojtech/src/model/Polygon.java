@@ -1,5 +1,7 @@
 package model;
 
+import graphics.Raster;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -97,5 +99,7 @@ public class Polygon {
     public Point fillSeed;
 
     public boolean scanLineFill;
+
+    public Raster fillPattern;
 
 }

@@ -55,6 +55,7 @@ public class Controller {
     private Point seedFillPoint;
     private SeedFiller seedFiller;
     private PolygonFiller polygonFiller;
+    private PatternFiller patternFiller;
 
     private PolygonCropper polygonCropper;
     private Point selectedCropPoint;
@@ -104,6 +105,7 @@ public class Controller {
         selectedPolygon.polygonId =1;
         sidebar.polygonPicker.addItem("Cut Polygon");
         freeLineList = new ArrayList<>();
+        patternFiller = new ScanlinePatternFiller(canvas.getRaster());
 
         sidebar.polygonPicker.addItem("Polygon 1");
         sidebar.polygonPicker.setSelectedIndex(1);
@@ -394,6 +396,7 @@ public class Controller {
             selectedPolygon.scanLineFill = false;
             selectedPolygon.fillSeed = null;
             selectedPolygon.fillColor = fillColor;
+            selectedPolygon.fillPattern = null;
             renderMain();
         });
 
@@ -409,6 +412,14 @@ public class Controller {
                 currentMode = Mode.LINECROP;
                 renderMain();
                 sidebar.lineCropBtn.setText("Finish");
+            }
+        });
+
+        sidebar.patternEditBtn.addActionListener(e ->{
+            Raster r = PatternDialog.showDialog();
+            if(r != null && selectedPolygon != cutPolygon){
+                selectedPolygon.fillPattern = r;
+                renderMain();
             }
         });
 
@@ -437,7 +448,7 @@ public class Controller {
     private final Action keyPressedT = new AbstractAction() {
         @Override
         public void actionPerformed(ActionEvent e) {
-            Raster r = PatternDialog.showDialog();
+
 
         }
     };
@@ -849,10 +860,6 @@ public class Controller {
                 return new Point(p.getX(), p.getY()+(dd*(int)Math.signum(dy)));
             }
 
-
-
-
-
         }
         else {
             if(Math.abs(dx)*2 < Math.abs(dy))// closer to main axis
@@ -864,9 +871,7 @@ public class Controller {
                 int dd = Math.abs(dy) - Math.abs(dx);
                 return new Point(p.getX()+(dd*(int)Math.signum(dx)), p.getY());
             }
-
         }
-
 
     }
 
@@ -1215,6 +1220,14 @@ public class Controller {
         for (Polygon p : polygonList){
 
             if(p.polygonId == 0) continue;
+
+
+            if(p.fillPattern != null && p.getLines().size() >2){
+                patternFiller.fill(p,p.fillPattern);
+                polygonRasterizer.rasterize(p);
+                continue;
+            }
+
 
 
             if(p.scanLineFill == true && p.Lines.size() > 2){

@@ -6,11 +6,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 
 public class PatternDialog extends JDialog {
 
     JButton exitBtn;
     JButton clrBtn;
+    JButton clearBtn;
+    JButton floodBtn;
     JPanel side;
     JPanel mid;
     ScaledCanvas patternCanvas;
@@ -33,7 +36,7 @@ public class PatternDialog extends JDialog {
     public void init(){
 
         mid = new JPanel(new GridBagLayout());
-        mid.setPreferredSize(new Dimension(340,400));
+        mid.setPreferredSize(new Dimension(300,400));
 
         add(mid);
 
@@ -46,20 +49,33 @@ public class PatternDialog extends JDialog {
 
         side = new JPanel();
         side.setLayout(new BoxLayout(side, BoxLayout.Y_AXIS));
-        side.setPreferredSize(new Dimension(60,400));
+        side.setPreferredSize(new Dimension(100,400));
         add(side);
 
         clrBtn = new JButton();
-        clrBtn.setPreferredSize(new Dimension(50,40));
+        clrBtn.setPreferredSize(new Dimension(90,40));
         clrBtn.setText("CLR");
         clrBtn.setBackground(new Color(color));
         side.add(clrBtn);
 
+        floodBtn = new JButton();
+        floodBtn.setText("Flood");
+        floodBtn.setPreferredSize(new Dimension(90,40));
+        side.add(floodBtn);
+
+
+        clearBtn = new JButton();
+        clearBtn.setPreferredSize(new Dimension(90,40));
+        clearBtn.setText("Reset");
+        side.add(clearBtn);
+
 
         exitBtn = new JButton();
         exitBtn.setText("Exit");
-        exitBtn.setPreferredSize(new Dimension(50,20));
+        exitBtn.setPreferredSize(new Dimension(90,20));
         side.add(exitBtn);
+
+
 
 
         patternCanvas.addMouseListener(new MouseAdapter() {
@@ -69,6 +85,19 @@ public class PatternDialog extends JDialog {
                 System.out.println(e.getX() + " " + e.getY() + " " + patternCanvas.getRaster().getWidth());
                 patternCanvas.setScaledPixel(e.getX(),e.getY(),color);
                 patternCanvas.repaint();
+            }
+
+        });
+
+        patternCanvas.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                super.mouseDragged(e);
+
+                System.out.println(e.getX() + " " + e.getY() + " " + patternCanvas.getRaster().getWidth());
+                patternCanvas.setScaledPixel(e.getX(),e.getY(),color);
+                patternCanvas.repaint();
+
             }
         });
 
@@ -81,8 +110,22 @@ public class PatternDialog extends JDialog {
             }
         });
 
+        floodBtn.addActionListener(e->{
+            for(int x = 0; x < patternCanvas.getWidth();x++){
+                for(int y =0; y < patternCanvas.getHeight(); y++){
+                    patternCanvas.setScaledPixel(x,y,color);
+                }
+            }
+            patternCanvas.repaint();
+        });
+
         exitBtn.addActionListener(e -> {
             this.setVisible(false);
+        });
+
+        clearBtn.addActionListener(e->{
+            patternCanvas.clear();
+            patternCanvas.repaint();
         });
 
 

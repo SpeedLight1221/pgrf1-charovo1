@@ -28,6 +28,8 @@ public class Sidebar extends JPanel {
     public JButton fillColorPickBtn;
     public JButton seedFillBtn;
     public JButton scanLineFillBtn;
+    public JButton patternFillBtn;
+    public JButton patternEditBtn;
     public JButton removeFillBtn;
     public JButton lineCropBtn;
 
@@ -93,35 +95,7 @@ public class Sidebar extends JPanel {
         lineColorPickBtn = lineColorPick.getPickerBtn();
 
 
-        /*JPanel cont = new JPanel(new GridBagLayout());
-        cont.setOpaque(false);
-        gbc.gridy = 3;
-        gbc.gridx =0;
-        gbc.gridwidth =4;
-        gbc.ipady = 0;
-        gbc.insets = new Insets(0,5,0,5);
-        gbc.anchor = GridBagConstraints.PAGE_START;
-        add(cont,gbc);
 
-        GridBagConstraints nGbc = new GridBagConstraints();
-
-        lineColorRect = new JPanel();
-        lineColorRect.setBackground(new Color(0xFF0000));
-        lineColorRect.setPreferredSize(new Dimension(20,20));
-        nGbc.fill = GridBagConstraints.NONE;
-        nGbc.gridx = 0;
-        nGbc.weightx = 1;
-
-        cont.add(lineColorRect,nGbc);
-
-
-
-        colorPickBtn = new JButton();
-        colorPickBtn.setText("Pick");
-        nGbc.fill = GridBagConstraints.HORIZONTAL;
-        nGbc.gridx = 1;
-        nGbc.weightx = 3;
-        cont.add(colorPickBtn,nGbc);*/
 
         applyToAllBtn = new JButton();
         applyToAllBtn.setText("Apply to All");
@@ -185,16 +159,25 @@ public class Sidebar extends JPanel {
         gbc.gridy = 11;
         add(scanLineFillBtn,gbc);
 
+
+
+        patternEditBtn = new JButton();
+        patternEditBtn.setText("Pattern Fill");
+        gbc.gridy = 12;
+        gbc.insets = new Insets(5,0,5,0);
+        add(patternEditBtn,gbc);
+
+
+
         removeFillBtn = new JButton();
         removeFillBtn.setText("Clear Fill");
-
-        gbc.gridy = 12;
+        gbc.gridy = 13;
         gbc.insets = new Insets(5,0,5,0);
         add(removeFillBtn,gbc);
 
         JSeparator hl4 = new JSeparator();
         gbc.insets = new Insets(10,0,10,0);
-        gbc.gridy = 13;
+        gbc.gridy = 14;
         gbc.gridx =0;
         gbc.gridwidth =4;
         add(hl4,gbc);
@@ -203,7 +186,7 @@ public class Sidebar extends JPanel {
         lineCropBtn = new JButton();
         lineCropBtn.setText("Crop Lines");
         gbc.weighty =1;
-        gbc.gridy = 14;
+        gbc.gridy = 15;
         gbc.insets = new Insets(0,0,5,0);
         add(lineCropBtn,gbc);
 
